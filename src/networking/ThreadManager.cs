@@ -22,7 +22,7 @@ namespace H3MP.Networking
         public static readonly DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public static readonly float pingTime = 1;
         public static float pingTimer = pingTime;
-
+        public static long epochTime = Convert.ToInt64((DateTime.Now.ToUniversalTime() - epoch).TotalMilliseconds);
         private void Update()
         {
             UpdateMain();
@@ -53,6 +53,7 @@ namespace H3MP.Networking
         /// <summary>Executes all code meant to run on the main thread. NOTE: Call this ONLY from the main thread.</summary>
         public static void UpdateMain()
         {
+            GameManager.serverTick += Convert.ToInt32(Time.fixedUnscaledDeltaTime); //Updates current tick.
 #if DEBUG
             if (Input.GetKey(KeyCode.PageDown))
             {
@@ -75,7 +76,7 @@ namespace H3MP.Networking
                 }
 #endif
 
-                for (int i = 0; i < executeCopiedOnMainThread.Count; i++)
+                for (int i = 0; i < executeCopiedOnMainThread.Count; i++)  //Iterates through main thread action queue.
                 {
                     executeCopiedOnMainThread[i]();
                 }
@@ -83,7 +84,7 @@ namespace H3MP.Networking
 
             if (!host)
             {
-                if (Client.punchThrough)
+                if (Client.punchThrough) // Nog: This seems to be part of connection brokering.
                 {
                     pingTimer -= Time.deltaTime;
                     if (pingTimer <= 0)
@@ -136,11 +137,12 @@ namespace H3MP.Networking
                     if (pingTimer <= 0)
                     {
                         pingTimer = pingTime;
-                        if (Client.singleton.gotWelcome)
+                        if (Client.singleton.gotWelcome) //If we'd successfully connected earlier, ping and sync server ticks.
                         {
-                            ClientSend.Ping(Convert.ToInt64((DateTime.Now.ToUniversalTime() - epoch).TotalMilliseconds));
+                            epochTime = Convert.ToInt64((DateTime.Now.ToUniversalTime() - epoch).TotalMilliseconds); // update clock for this tick
+                            ClientSend.Ping(epochTime);
                         }
-                        else
+                        else //If the connection is broken
                         {
                             ++Client.singleton.pingAttemptCounter;
                             if (Client.singleton.pingAttemptCounter >= 10)

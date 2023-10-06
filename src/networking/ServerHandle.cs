@@ -43,8 +43,9 @@ namespace H3MP.Networking
         public static void Ping(int clientID, Packet packet)
         {
             long time = packet.ReadLong();
-            Server.clients[clientID].ping = Convert.ToInt64((DateTime.Now.ToUniversalTime() - ThreadManager.epoch).TotalMilliseconds) - time;
-            ServerSend.Ping(clientID, time);
+            long epochTime = Convert.ToInt64((DateTime.Now.ToUniversalTime() - ThreadManager.epoch).TotalMilliseconds);
+            Server.clients[clientID].ping = epochTime - time;
+            ServerSend.Ping(clientID, epochTime);
         }
 
         public static void PlayerState(int clientID, Packet packet)

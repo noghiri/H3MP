@@ -203,12 +203,14 @@ namespace H3MP.Networking
             }
         }
 
-        public static void Welcome(int toClient, string msg, bool colorByIFF, int nameplateMode, int radarMode, bool radarColor, Dictionary<string, Dictionary<int, KeyValuePair<float, int>>> maxHealthEntries)
+        public static void Welcome(int toClient, int serverTick, long serverTime, string msg, bool colorByIFF, int nameplateMode, int radarMode, bool radarColor, Dictionary<string, Dictionary<int, KeyValuePair<float, int>>> maxHealthEntries)
         {
             using(Packet packet = new Packet((int)ServerPackets.welcome))
             {
                 packet.Write(msg);
                 packet.Write(toClient);
+                packet.Write(serverTick);
+                packet.Write(serverTime);
                 packet.Write(colorByIFF);
                 packet.Write(nameplateMode);
                 packet.Write(radarMode);
@@ -236,16 +238,17 @@ namespace H3MP.Networking
                 {
                     packet.Write(GameManager.spectatorHosts[i]);
                 }
-
                 SendTCPData(toClient, packet);
             }
         }
 
         public static void Ping(int toClient, long time)
         {
+            long serverTick = GameManager.serverTick;
             using (Packet packet = new Packet((int)ServerPackets.ping))
             {
                 packet.Write(time);
+                packet.Write(serverTick);
                 SendTCPData(toClient, packet);
             }
         }

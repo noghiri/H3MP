@@ -17,6 +17,7 @@ namespace H3MP.Networking
         {
             string msg = packet.ReadString();
             int ID = packet.ReadInt();
+            GameManager.serverTick = packet.ReadInt();
             GameManager.colorByIFF = packet.ReadBool();
             GameManager.nameplateMode = packet.ReadInt();
             GameManager.radarMode = packet.ReadInt();
@@ -80,7 +81,19 @@ namespace H3MP.Networking
 
         public static void Ping(Packet packet)
         {
-            GameManager.ping = Convert.ToInt64((DateTime.Now.ToUniversalTime() - ThreadManager.epoch).TotalMilliseconds) - packet.ReadLong();
+            long readTime = packet.ReadLong();
+            GameManager.ping = Convert.ToInt64((DateTime.Now.ToUniversalTime() - ThreadManager.epoch).TotalMilliseconds) - readTime;
+            int readTick = packet.ReadInt();
+            int clockDelta = (readTick + (Convert.ToInt32(GameManager.ping) / 2)) - GameManager.serverTick; //Get delta between the server's tick and the local idea of the server tick.
+            if (clockDelta < 100)
+            {
+                GameManager.serverTick = readTick + (Convert.ToInt32(GameManager.ping) / 2); //if the difference between when we think it is and when it actually is is short enough we don't really care tbh.
+            }
+            else
+            {
+                Mod.LogWarning("WARNING: Time displacement has exceeded threshold! Server and client were displaced by " + clockDelta.ToString() + " miliseconds!");
+                GameManager.serverTick = readTick + (Convert.ToInt32(GameManager.ping) / 2);
+            }
         }
 
         public static void SpawnPlayer(Packet packet)

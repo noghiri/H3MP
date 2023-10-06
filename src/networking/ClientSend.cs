@@ -71,6 +71,7 @@ namespace H3MP.Networking
                 packet.Write(time);
                 SendTCPData(packet);
             }
+            GameManager.lastTick = GameManager.serverTick;
         }
 
         public static void PlayerState(Vector3 playerPos, Quaternion playerRot, Vector3 headPos, Quaternion headRot, Vector3 torsoPos, Quaternion torsoRot,

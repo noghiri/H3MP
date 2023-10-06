@@ -99,13 +99,12 @@ namespace H3MP.Networking
                 socket.SendBufferSize = dataBufferSize;
 
                 stream = socket.GetStream();
-
                 receivedData = new Packet();
                 receiveBuffer = new byte[dataBufferSize];
 
                 stream.BeginRead(receiveBuffer, 0, dataBufferSize, ReceiveCallback, null);
 
-                ServerSend.Welcome(ID, "Welcome to the server", GameManager.colorByIFF, GameManager.nameplateMode, GameManager.radarMode, GameManager.radarColor, GameManager.maxHealthByInstanceByScene);
+                ServerSend.Welcome(ID, GameManager.serverTick, openTime, "Welcome to the server", GameManager.colorByIFF, GameManager.nameplateMode, GameManager.radarMode, GameManager.radarColor, GameManager.maxHealthByInstanceByScene);
             }
 
             public void SendData(Packet packet)

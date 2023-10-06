@@ -33,6 +33,7 @@ namespace H3MP
             }
         }
 
+
         public static Dictionary<int, PlayerManager> players = new Dictionary<int, PlayerManager>();
         public static List<TrackedObjectData> objects = new List<TrackedObjectData>(); // Tracked objects under control of this gameManager
         public static Dictionary<MonoBehaviour, TrackedObject> trackedObjectByObject = new Dictionary<MonoBehaviour, TrackedObject>();
@@ -60,6 +61,9 @@ namespace H3MP
         public static bool instanceBringItems;
         public static long ping = -1;
         public static int reconnectionInstance;
+        public static long serverTime = Convert.ToInt64((DateTime.Now.ToUniversalTime() - ThreadManager.epoch));
+        public static int serverTick = -1;
+        public static int lastTick = -1;
 
         /// <summary>
         /// CUSTOMIZATION
@@ -258,7 +262,7 @@ namespace H3MP
         private void Awake()
         {
             singleton = this;
-
+            serverTick = Convert.ToInt32(Time.fixedUnscaledTime * 1000.0);
             // Init the main instance
             activeInstances.Add(instance, 1);
         }
