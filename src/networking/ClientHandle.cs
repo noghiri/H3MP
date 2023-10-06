@@ -18,6 +18,7 @@ namespace H3MP.Networking
             string msg = packet.ReadString();
             int ID = packet.ReadInt();
             GameManager.serverTick = packet.ReadInt();
+            long remoteServerTime = packet.ReadLong();
             GameManager.colorByIFF = packet.ReadBool();
             GameManager.nameplateMode = packet.ReadInt();
             GameManager.radarMode = packet.ReadInt();
@@ -48,6 +49,8 @@ namespace H3MP.Networking
                 Mod.registeredCustomPacketIDs.Add(cutomPacketHandlerID, cutomPacketIndex);
                 Mod.CustomPacketHandlerReceivedInvoke(cutomPacketHandlerID, cutomPacketIndex);
             }
+            GameManager.ping = (remoteServerTime - ThreadManager.epochTime) * 2;  //estimating two-way ping to start with, based on local clock.
+            Mod.LogInfo($"Welcome received from server, sent at {remoteServerTime} with a latency of {GameManager.ping}.", false);
 
             H3MPWristMenuSection.UpdateMaxHealth(GameManager.scene, GameManager.instance, -2, -1);
 

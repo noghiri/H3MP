@@ -54,6 +54,7 @@ namespace H3MP.Networking
         public static void UpdateMain()
         {
             GameManager.serverTick += Convert.ToInt32(Time.fixedUnscaledDeltaTime); //Updates current tick.
+            epochTime = Convert.ToInt64((DateTime.Now.ToUniversalTime() - epoch).TotalMilliseconds); // update system clock for this tick.
 #if DEBUG
             if (Input.GetKey(KeyCode.PageDown))
             {
@@ -139,7 +140,6 @@ namespace H3MP.Networking
                         pingTimer = pingTime;
                         if (Client.singleton.gotWelcome) //If we'd successfully connected earlier, ping and sync server ticks.
                         {
-                            epochTime = Convert.ToInt64((DateTime.Now.ToUniversalTime() - epoch).TotalMilliseconds); // update clock for this tick
                             ClientSend.Ping(epochTime);
                         }
                         else //If the connection is broken
