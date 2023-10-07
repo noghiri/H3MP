@@ -39,6 +39,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="src\Grandfather.cs" />
     <Compile Include="src\networking\indexServer\ISClient.cs" />
     <Compile Include="src\networking\indexServer\ISClientHandle.cs" />
     <Compile Include="src\networking\indexServer\ISClientSend.cs" />
