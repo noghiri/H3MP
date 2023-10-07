@@ -79,19 +79,21 @@ namespace H3MP.Networking
                                        Vector3 rightHandPos, Quaternion rightHandRot,
                                        float health, int maxHealth)
         {
-            PlayerPositionEvent psEvent = new PlayerPositionEvent();
-            psEvent.playerPos = playerPos;
-            psEvent.playerRot = playerRot;
-            psEvent.headPos = headPos;
-            psEvent.headRot = headRot;
-            psEvent.torsoPos = torsoPos;
-            psEvent.torsoRot = torsoRot;
-            psEvent.leftHandPos = leftHandPos;
-            psEvent.leftHandRot = leftHandRot;
-            psEvent.rightHandPos = rightHandPos;
-            psEvent.rightHandRot = rightHandRot;
-            psEvent.health = health;
-            psEvent.maxHealth = maxHealth;
+            PlayerPositionEvent psEvent = new PlayerPositionEvent()
+            {
+                playerPos = playerPos,
+                playerRot = playerRot,
+                headPos = headPos,
+                headRot = headRot,
+                torsoPos = torsoPos,
+                torsoRot = torsoRot,
+                leftHandPos = leftHandPos,
+                leftHandRot = leftHandRot,
+                rightHandPos = rightHandPos,
+                rightHandRot = rightHandRot,
+                health = health,
+                maxHealth = maxHealth
+            };
             byte[] additionalData = GameManager.playerStateAddtionalDataSize == -1 ? null : new byte[GameManager.playerStateAddtionalDataSize];
             if (additionalData != null && additionalData.Length > 0)
             {
