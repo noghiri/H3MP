@@ -40,6 +40,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="src\Grandfather.cs" />
+    <Compile Include="src\networking\NetworkEvents\PlayerPositionEvent.cs" />
+    <Compile Include="src\networking\NetworkEvents\NetworkEvent.cs" />
+    <Compile Include="src\networking\PacketConductor.cs" />
     <Compile Include="src\networking\indexServer\ISClient.cs" />
     <Compile Include="src\networking\indexServer\ISClientHandle.cs" />
     <Compile Include="src\networking\indexServer\ISClientSend.cs" />

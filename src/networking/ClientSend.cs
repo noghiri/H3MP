@@ -1,4 +1,5 @@
 ﻿using FistVR;
+using H3MP.src.networking.clientEventReg;
 using H3MP.Tracking;
 using System;
 using System.Collections.Generic;
@@ -78,35 +79,60 @@ namespace H3MP.Networking
                                        Vector3 rightHandPos, Quaternion rightHandRot,
                                        float health, int maxHealth)
         {
-            using(Packet packet = new Packet((int)ClientPackets.playerState))
+            PlayerPositionEvent psEvent = new PlayerPositionEvent();
+            psEvent.playerPos = playerPos;
+            psEvent.playerRot = playerRot;
+            psEvent.headPos = headPos;
+            psEvent.headRot = headRot;
+            psEvent.torsoPos = torsoPos;
+            psEvent.torsoRot = torsoRot;
+            psEvent.leftHandPos = leftHandPos;
+            psEvent.leftHandRot = leftHandRot;
+            psEvent.rightHandPos = rightHandPos;
+            psEvent.rightHandRot = rightHandRot;
+            psEvent.health = health;
+            psEvent.maxHealth = maxHealth;
+            byte[] additionalData = GameManager.playerStateAddtionalDataSize == -1 ? null : new byte[GameManager.playerStateAddtionalDataSize];
+            if (additionalData != null && additionalData.Length > 0)
             {
-                packet.Write(playerPos);
-                packet.Write(playerRot);
-                packet.Write(headPos);
-                packet.Write(headRot);
-                packet.Write(torsoPos);
-                packet.Write(torsoRot);
-                packet.Write(leftHandPos);
-                packet.Write(leftHandRot);
-                packet.Write(rightHandPos);
-                packet.Write(rightHandRot);
-                packet.Write(health);
-                packet.Write(maxHealth);
-                byte[] additionalData = GameManager.playerStateAddtionalDataSize == -1 ? null : new byte[GameManager.playerStateAddtionalDataSize];
-                if(additionalData != null && additionalData.Length > 0)
-                {
-                    GameManager.playerStateAddtionalDataSize = additionalData.Length;
-                    packet.Write((short)additionalData.Length);
-                    packet.Write(additionalData);
-                }
-                else
-                {
-                    GameManager.playerStateAddtionalDataSize = 0;
-                    packet.Write((short)0);
-                }
-
-                SendUDPData(packet);
+                GameManager.playerStateAddtionalDataSize = additionalData.Length;
+                psEvent.additionalData = Convert.ToInt16(string.Format("{0}{1}", additionalData.Length, additionalData));
             }
+            else
+            {
+                GameManager.playerStateAddtionalDataSize = 0;
+                psEvent.additionalData = ((short)0);
+            }
+
+            /*            using(Packet packet = new Packet((int)ClientPackets.playerState))
+                        {
+                            packet.Write(playerPos);
+                            packet.Write(playerRot);
+                            packet.Write(headPos);
+                            packet.Write(headRot);
+                            packet.Write(torsoPos);
+                            packet.Write(torsoRot);
+                            packet.Write(leftHandPos);
+                            packet.Write(leftHandRot);
+                            packet.Write(rightHandPos);
+                            packet.Write(rightHandRot);
+                            packet.Write(health);
+                            packet.Write(maxHealth);
+                            byte[] additionalData = GameManager.playerStateAddtionalDataSize == -1 ? null : new byte[GameManager.playerStateAddtionalDataSize];
+                            if(additionalData != null && additionalData.Length > 0)
+                            {
+                                GameManager.playerStateAddtionalDataSize = additionalData.Length;
+                                packet.Write((short)additionalData.Length);
+                                packet.Write(additionalData);
+                            }
+                            else
+                            {
+                                GameManager.playerStateAddtionalDataSize = 0;
+                                packet.Write((short)0);
+                            }
+
+                            SendUDPData(packet);
+                        }*/
         }
 
         public static void PlayerIFF(int iff)
