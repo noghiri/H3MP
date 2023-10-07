@@ -61,8 +61,8 @@ namespace H3MP
         public static bool instanceBringItems;
         public static long ping = -1;
         public static int reconnectionInstance;
-        public static long serverTime = Convert.ToInt64((DateTime.Now.ToUniversalTime() - ThreadManager.epoch));
-        public static int serverTick = -1;
+        public static long serverTime = Convert.ToInt64((DateTime.Now.ToUniversalTime() - ThreadManager.epoch)); //initialize server time
+        public static int serverTick = -1; //Initialize server tick counter
         public static int lastTick = -1;
 
         /// <summary>
@@ -262,9 +262,10 @@ namespace H3MP
         private void Awake()
         {
             singleton = this;
-            serverTick = Convert.ToInt32(Time.fixedUnscaledTime * 1000.0);
+            serverTick = Convert.ToInt32(Time.fixedUnscaledTime * 1000.0); //Initialize the tick counter, in milliseconds.
             // Init the main instance
             activeInstances.Add(instance, 1);
+            Mod.LogInfo($"Initialized server at {serverTick}");            //Log initialization.
         }
 
         private void Update()

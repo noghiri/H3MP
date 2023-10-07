@@ -86,11 +86,12 @@ namespace H3MP.Networking
         {
             long readTime = packet.ReadLong();
             GameManager.ping = Convert.ToInt64((DateTime.Now.ToUniversalTime() - ThreadManager.epoch).TotalMilliseconds) - readTime;
+            int pingInt = (int)GameManager.ping;
             int readTick = packet.ReadInt();
-            int clockDelta = (readTick + (Convert.ToInt32(GameManager.ping) / 2)) - GameManager.serverTick; //Get delta between the server's tick and the local idea of the server tick.
+            int clockDelta = readTick + pingInt - GameManager.serverTick; //Get delta between the server's tick and the local idea of the server tick.
             if (clockDelta < 100)
             {
-                GameManager.serverTick = readTick + (Convert.ToInt32(GameManager.ping) / 2); //if the difference between when we think it is and when it actually is is short enough we don't really care tbh.
+                GameManager.serverTick = readTick + (pingInt / 2); //if the difference between when we think it is and when it actually is is short enough we don't really care tbh.
             }
             else
             {
