@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using H3MP.Networking.Events;
+using H3MP.src.networking;
 using UnityEngine;
 
 namespace H3MP.Networking
@@ -281,18 +283,24 @@ namespace H3MP.Networking
                     // Also send the player state to all clients
                     if (GM.CurrentPlayerBody != null)
                     {
-                        ClientSend.PlayerState(GM.CurrentPlayerBody.transform.position,
-                                               GM.CurrentPlayerBody.transform.rotation,
-                                               GM.CurrentPlayerBody.headPositionFiltered,
-                                               GM.CurrentPlayerBody.headRotationFiltered,
-                                               GM.CurrentPlayerBody.headPositionFiltered + GameManager.torsoOffset,
-                                               GM.CurrentPlayerBody.Torso.rotation,
-                                               GM.CurrentPlayerBody.LeftHand.position,
-                                               GM.CurrentPlayerBody.LeftHand.rotation,
-                                               GM.CurrentPlayerBody.RightHand.position,
-                                               GM.CurrentPlayerBody.RightHand.rotation,
-                                               GM.CurrentPlayerBody.Health,
-                                               GM.CurrentPlayerBody.GetMaxHealthPlayerRaw());
+                        FVRPlayerBody body = GM.CurrentPlayerBody;
+                        PlayerPositionEvent evt = new PlayerPositionEvent
+                        {
+                            PlayerPosition = body.transform.position,
+                            PlayerRotation = body.transform.rotation,
+                            HeadPosition = body.headPositionFiltered,
+                            HeadRotation = body.headRotationFiltered,
+                            TorsoPosition = body.headPositionFiltered + GameManager.torsoOffset,
+                            TorsoRotation = body.Torso.rotation,
+                            LeftHandPosition = body.LeftHand.position,
+                            LeftHandRotation = body.LeftHand.rotation,
+                            RightHandPosition = body.RightHand.position,
+                            RightHandRotation = body.RightHand.rotation,
+                            Health = body.Health,
+                            MaxHealth = body.GetMaxHealthPlayerRaw()
+                        };
+                        
+                        PacketConductor.EnqueueEvent(evt);
                     }
                 }
             }

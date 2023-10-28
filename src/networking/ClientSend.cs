@@ -1,8 +1,8 @@
 ﻿using FistVR;
-using H3MP.src.networking.clientEventReg;
 using H3MP.Tracking;
 using System;
 using System.Collections.Generic;
+using H3MP.Networking.Events;
 using UnityEngine;
 
 namespace H3MP.Networking
@@ -72,69 +72,6 @@ namespace H3MP.Networking
                 packet.Write(time);
                 SendTCPData(packet);
             }
-        }
-
-        public static void PlayerState(Vector3 playerPos, Quaternion playerRot, Vector3 headPos, Quaternion headRot, Vector3 torsoPos, Quaternion torsoRot,
-                                       Vector3 leftHandPos, Quaternion leftHandRot,
-                                       Vector3 rightHandPos, Quaternion rightHandRot,
-                                       float health, int maxHealth)
-        {
-            PlayerPositionEvent psEvent = new PlayerPositionEvent()
-            {
-                playerPos = playerPos,
-                playerRot = playerRot,
-                headPos = headPos,
-                headRot = headRot,
-                torsoPos = torsoPos,
-                torsoRot = torsoRot,
-                leftHandPos = leftHandPos,
-                leftHandRot = leftHandRot,
-                rightHandPos = rightHandPos,
-                rightHandRot = rightHandRot,
-                health = health,
-                maxHealth = maxHealth
-            };
-            byte[] additionalData = GameManager.playerStateAddtionalDataSize == -1 ? null : new byte[GameManager.playerStateAddtionalDataSize];
-            if (additionalData != null && additionalData.Length > 0)
-            {
-                GameManager.playerStateAddtionalDataSize = additionalData.Length;
-                psEvent.additionalData = Convert.ToInt16(string.Format("{0}{1}", additionalData.Length, additionalData));
-            }
-            else
-            {
-                GameManager.playerStateAddtionalDataSize = 0;
-                psEvent.additionalData = ((short)0);
-            }
-
-            /*            using(Packet packet = new Packet((int)ClientPackets.playerState))
-                        {
-                            packet.Write(playerPos);
-                            packet.Write(playerRot);
-                            packet.Write(headPos);
-                            packet.Write(headRot);
-                            packet.Write(torsoPos);
-                            packet.Write(torsoRot);
-                            packet.Write(leftHandPos);
-                            packet.Write(leftHandRot);
-                            packet.Write(rightHandPos);
-                            packet.Write(rightHandRot);
-                            packet.Write(health);
-                            packet.Write(maxHealth);
-                            byte[] additionalData = GameManager.playerStateAddtionalDataSize == -1 ? null : new byte[GameManager.playerStateAddtionalDataSize];
-                            if(additionalData != null && additionalData.Length > 0)
-                            {
-                                GameManager.playerStateAddtionalDataSize = additionalData.Length;
-                                packet.Write((short)additionalData.Length);
-                                packet.Write(additionalData);
-                            }
-                            else
-                            {
-                                GameManager.playerStateAddtionalDataSize = 0;
-                                packet.Write((short)0);
-                            }
-
-                            SendUDPData(packet);
-                        }*/
         }
 
         public static void PlayerIFF(int iff)
