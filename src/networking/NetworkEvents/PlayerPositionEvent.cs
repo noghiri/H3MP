@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace H3MP.src.networking.clientEventReg
 {
+    /// <summary>
+    /// Player Position event type, for adding to queue.
+    /// </summary>
     class PlayerPositionEvent : NetworkEvent
     {
         public Vector3 playerPos;
@@ -21,10 +24,12 @@ namespace H3MP.src.networking.clientEventReg
         public float health;
         public int maxHealth;
         public short additionalData;
+        private List<byte> eventBuffer;
 
         public override void Serialize()
         {
             // Code here to actually write stuff into a byte array for transmission
+            
         }
 
         public override void Deserialize()

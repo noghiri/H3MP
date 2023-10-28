@@ -1,4 +1,5 @@
 ﻿using H3MP.Networking;
+using H3MP.src.networking.clientEventReg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,8 +12,10 @@ namespace H3MP.src.networking
     /// </summary>
     class PacketConductor
     {
-        public static Queue<Packet> packetQueueTx;
+        public static Queue<NetworkEvent> eventQueueUDPTx;
+        public static Queue<NetworkEvent> eventQueueTCPTx;
         public static Queue<Packet> packetQueueRx;
+        public List<byte> buffer;
 
         /// <summary>
         /// Initialization function
@@ -29,10 +32,26 @@ namespace H3MP.src.networking
         {
             
         }
-
+        /// <summary>
+        /// Adds events for eventual UDP transmission to the UDP event queue.
+        /// </summary>
+        /// <param name="_value"></param>
+        public void ToQueueUDP(NetworkEvent _value)
+        {
+            eventQueueUDPTx.Enqueue(_value);
+        }
 
         /// <summary>
-        /// A generic packet reader.
+        /// Adds events for eventual TCP transmission to the TCP event queue.
+        /// </summary>
+        /// <param name="_value"></param>
+        public void ToQueueTCP(NetworkEvent _value)
+        {
+            eventQueueTCPTx.Enqueue(_value);
+        }
+
+        /// <summary>
+        /// A generic byte array reader.
         /// </summary>
         public struct Reader
         {
@@ -53,7 +72,7 @@ namespace H3MP.src.networking
         }
 
         /// <summary>
-        /// A generic packet writer.
+        /// A generic byte array writer. 
         /// </summary>
         public struct Writer
         {
