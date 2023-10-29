@@ -192,7 +192,9 @@ namespace H3MP.Networking
         connectionComplete = 179,
         sightFlipperState = 180,
         sightRaiserState = 181,
-        gatlingGunFire = 182
+        gatlingGunFire = 182,
+        
+        eventPacket = 500,
     }
 
     /// <summary>Sent from client to server.</summary>
@@ -372,7 +374,9 @@ namespace H3MP.Networking
         roundSplode = 171,
         sightFlipperState = 172,
         sightRaiserState = 173,
-        gatlingGunFire = 174
+        gatlingGunFire = 174,
+        
+        eventPacket = 500,
     }
 
     public class Packet : IDisposable
@@ -1337,6 +1341,19 @@ namespace H3MP.Networking
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+        
+        public static void GetLengthAndId(byte[] buff, out int length, out int id)
+        {
+            length = (buff[0] << 24)
+                + (buff[1] << 16)
+                + (buff[2] << 8)
+                + (buff[3]);
+            
+            id = (buff[4] << 24)
+                + (buff[5] << 16)
+                + (buff[6] << 8)
+                + (buff[7]);
         }
     }
 }

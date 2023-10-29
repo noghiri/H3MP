@@ -1,13 +1,8 @@
 ﻿using FistVR;
 using H3MP.Scripts;
-using RootMotion;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
 using H3MP.Networking.Events;
-using H3MP.src.networking;
 using UnityEngine;
 
 namespace H3MP.Networking
@@ -220,6 +215,29 @@ namespace H3MP.Networking
 
         public static void UpdateMainFixed()
         {
+            if (GameManager.playersPresent.Count > 0 && GM.CurrentPlayerBody != null)
+            {
+                FVRPlayerBody body = GM.CurrentPlayerBody;
+                PlayerPositionEvent evt = new PlayerPositionEvent
+                {
+                    SourceClientId = host ? 0 : Client.singleton.ID,
+                    PlayerPosition = body.transform.position,
+                    PlayerRotation = body.transform.rotation,
+                    HeadPosition = body.headPositionFiltered,
+                    HeadRotation = body.headRotationFiltered,
+                    TorsoPosition = body.headPositionFiltered + GameManager.torsoOffset,
+                    TorsoRotation = body.Torso.rotation,
+                    LeftHandPosition = body.LeftHand.position,
+                    LeftHandRotation = body.LeftHand.rotation,
+                    RightHandPosition = body.RightHand.position,
+                    RightHandRotation = body.RightHand.rotation,
+                    Health = body.Health,
+                    MaxHealth = body.GetMaxHealthPlayerRaw()
+                };
+
+                EventConductor.ConductEvent(evt);
+            }
+            
             // Can only update clients if this is the host
             if (host)
             {
@@ -227,26 +245,6 @@ namespace H3MP.Networking
                 {
                     // Send all trackedItems to all clients
                     ServerSend.TrackedObjects();
-
-                    // Also send the host's player state to all clients
-                    if (GM.CurrentPlayerBody != null)
-                    {
-                        ServerSend.PlayerState(0,
-                                               GM.CurrentPlayerBody.transform.position,
-                                               GM.CurrentPlayerBody.transform.rotation,
-                                               GM.CurrentPlayerBody.headPositionFiltered,
-                                               GM.CurrentPlayerBody.headRotationFiltered,
-                                               GM.CurrentPlayerBody.headPositionFiltered + GameManager.torsoOffset,
-                                               GM.CurrentPlayerBody.Torso.rotation,
-                                               GM.CurrentPlayerBody.LeftHand.position,
-                                               GM.CurrentPlayerBody.LeftHand.rotation,
-                                               GM.CurrentPlayerBody.RightHand.position,
-                                               GM.CurrentPlayerBody.RightHand.rotation,
-                                               GM.CurrentPlayerBody.Health,
-                                               GM.CurrentPlayerBody.GetMaxHealthPlayerRaw(),
-                                               GameManager.scene,
-                                               GameManager.instance);
-                    }
                 }
 
                 // Send ID confirmation if there is one
@@ -279,29 +277,6 @@ namespace H3MP.Networking
                 if (GameManager.playersPresent.Count > 0)
                 {
                     ClientSend.TrackedObjects();
-
-                    // Also send the player state to all clients
-                    if (GM.CurrentPlayerBody != null)
-                    {
-                        FVRPlayerBody body = GM.CurrentPlayerBody;
-                        PlayerPositionEvent evt = new PlayerPositionEvent
-                        {
-                            PlayerPosition = body.transform.position,
-                            PlayerRotation = body.transform.rotation,
-                            HeadPosition = body.headPositionFiltered,
-                            HeadRotation = body.headRotationFiltered,
-                            TorsoPosition = body.headPositionFiltered + GameManager.torsoOffset,
-                            TorsoRotation = body.Torso.rotation,
-                            LeftHandPosition = body.LeftHand.position,
-                            LeftHandRotation = body.LeftHand.rotation,
-                            RightHandPosition = body.RightHand.position,
-                            RightHandRotation = body.RightHand.rotation,
-                            Health = body.Health,
-                            MaxHealth = body.GetMaxHealthPlayerRaw()
-                        };
-                        
-                        PacketConductor.EnqueueEvent(evt);
-                    }
                 }
             }
         }

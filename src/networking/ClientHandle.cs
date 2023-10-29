@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using H3MP.Networking.Serialization;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -4589,6 +4590,12 @@ namespace H3MP.Networking
                     gameObject.GetComponent<BallisticProjectile>().Fire(dir, null);
                 }
             }
+        }
+
+        public static void HandleEventsPacket(byte[] data)
+        {
+            SerializationReader reader = new(data, 0);
+            reader.ReadNative(out int _); // Discard packet header
         }
     }
 }

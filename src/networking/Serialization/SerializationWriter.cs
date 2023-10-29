@@ -8,7 +8,7 @@ namespace H3MP.Networking.Serialization;
 public struct SerializationWriter
 {
     private readonly byte[] _buffer;
-    public int Offset { get; private set; }
+    public int Offset;
 
     public SerializationWriter(byte[] buffer, int offset)
     {

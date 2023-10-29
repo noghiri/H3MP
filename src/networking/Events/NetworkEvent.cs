@@ -7,7 +7,7 @@ public abstract class NetworkEvent
 {
     public readonly EventType Type;
 
-    public byte SourceClientId;
+    public int SourceClientId;
 
     protected NetworkEvent(EventType type)
     {

@@ -41,11 +41,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="src\Grandfather.cs" />
+    <Compile Include="src\networking\Events\EventArray.cs" />
     <Compile Include="src\networking\Events\EventType.cs" />
     <Compile Include="src\networking\Events\EventTypes.cs" />
     <Compile Include="src\networking\Events\NetworkEvent.cs" />
     <Compile Include="src\networking\Events\PlayerPositionEvent.cs" />
-    <Compile Include="src\networking\PacketConductor.cs" />
+    <Compile Include="src\networking\EventConductor.cs" />
     <Compile Include="src\networking\indexServer\ISClient.cs" />
     <Compile Include="src\networking\indexServer\ISClientHandle.cs" />
     <Compile Include="src\networking\indexServer\ISClientSend.cs" />

@@ -376,57 +376,60 @@ namespace H3MP.Networking
 
             private void HandleData(byte[] data)
             {
-                using(Packet packet = new Packet(data))
-                {
-                    int packetLength = packet.ReadInt();
-                    data = packet.ReadBytes(packetLength);
-                }
-
                 ThreadManager.ExecuteOnMainThread(() =>
                 {
                     if (singleton.isConnected)
                     {
-                        using (Packet packet = new Packet(data))
+                        Packet.GetLengthAndId(data, out int length, out int packetID);
+
+                        if (packetID < 500)
                         {
-                            int packetID = packet.ReadInt();
-                            if (packetID < 0)
+                            using (Packet packet = new Packet(data))
                             {
-                                if (packetID == -1)
+                                packetID = packet.ReadInt();
+                                if (packetID < 0)
                                 {
-                                    Mod.GenericCustomPacketReceivedInvoke(0, packet.ReadString(), packet);
-                                }
-                                else // packetID <= -2
-                                {
-                                    int index = packetID * -1 - 2;
-                                    if (Mod.customPacketHandlers.Length > index && Mod.customPacketHandlers[index] != null)
+                                    if (packetID == -1)
                                     {
-#if DEBUG
-                                        if (Input.GetKey(KeyCode.PageDown))
+                                        Mod.GenericCustomPacketReceivedInvoke(0, packet.ReadString(), packet);
+                                    }
+                                    else // packetID <= -2
+                                    {
+                                        int index = packetID * -1 - 2;
+                                        if (Mod.customPacketHandlers.Length > index &&
+                                            Mod.customPacketHandlers[index] != null)
                                         {
-                                            Mod.LogInfo("\tHandling custom UDP packet: " + packetID);
+#if DEBUG
+                                            if (Input.GetKey(KeyCode.PageDown))
+                                            {
+                                                Mod.LogInfo("\tHandling custom UDP packet: " + packetID);
+                                            }
+#endif
+                                            Mod.customPacketHandlers[index](0, packet);
+                                        }
+#if DEBUG
+                                        else
+                                        {
+                                            Mod.LogWarning(
+                                                "\tClient received invalid custom UDP packet ID: " + packetID);
                                         }
 #endif
-                                        Mod.customPacketHandlers[index](0, packet);
                                     }
-#if DEBUG
-                                    else
-                                    {
-                                        Mod.LogWarning("\tClient received invalid custom UDP packet ID: " + packetID);
-                                    }
-#endif
                                 }
-                            }
-                            else
-                            {
-#if DEBUG
-                                if (Input.GetKey(KeyCode.PageDown))
+                                else
                                 {
-                                    Mod.LogInfo("\tHandling UDP packet: " + packetID+" ("+(ServerPackets)packetID+"), length: "+packet.buffer.Count);
-                                }
+#if DEBUG
+                                    if (Input.GetKey(KeyCode.PageDown))
+                                    {
+                                        Mod.LogInfo("\tHandling UDP packet: " + packetID + " (" +
+                                                    (ServerPackets)packetID + "), length: " + packet.buffer.Count);
+                                    }
 #endif
-                                packetHandlers[packetID](packet);
+
+                                    packetHandlers[packetID](packet);
+                                }
                             }
-                        }
+                        } else ClientHandle.HandleEventsPacket(data);
                     }
                 });
             }
