@@ -190,7 +190,7 @@ namespace H3MP.Networking
                                         }
                                         else // packetID <= -2
                                         {
-                                            int index = packetID * -1 - 2;
+                                            int index = packetID * -1 - 2;  // When sending a custom packet, because array indexes need to be above 0, we have to make it negative in transit to get the right handler
                                             if (Mod.customPacketHandlers.Length > index && Mod.customPacketHandlers[index] != null)
                                             {
 #if DEBUG
