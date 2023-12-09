@@ -79,14 +79,17 @@ namespace H3MP.Networking
                 if (exclude == -1 || toClients[i] != exclude)
                 {
                     //Server.clients[toClients[i]].udp.SendData(packet);
-                    Server.clients[toClients[i]].queuedPackets[key] = packet.ToArray();
+                    lock (Server.clients[toClients[i]].queuedPackets)
+                    {
+                        Server.clients[toClients[i]].queuedPackets[key] = packet.ToArray();
+                    }
                 }
             }
         }
 
         public static void SendAllBatchedUDPData()
         {
-            foreach (var client in Server.clients.Values)
+            foreach (ServerClient client in Server.clients.Values)
             {
                 SendBatchedPackets(client);
             }
@@ -94,7 +97,6 @@ namespace H3MP.Networking
         
         public static void SendBatchedPackets(ServerClient client)
         {
-            
             List<byte[]> packetsToSend = new List<byte[]>();
             lock (client.queuedPackets)
             {
@@ -106,7 +108,7 @@ namespace H3MP.Networking
             
             Packet batchedPacket = new Packet((int) ServerPackets.batchedPacket);
             
-            foreach (var packetData in packetsToSend)
+            foreach (byte[] packetData in packetsToSend)
             {
 
                 // If the data of this packet would put us over the MTU, send what we have now
@@ -390,7 +392,7 @@ namespace H3MP.Networking
                         packet.Write((short)0);
                     }
 
-                    SendUDPData(otherPlayers, packet, ID);
+                    SendUDPData(otherPlayers, packet, ID, false, GM.CurrentPlayerBody);
                 }
             }
         }
@@ -1619,7 +1621,7 @@ namespace H3MP.Networking
             }
         }
 
-        public static void UberShatterableShatter(int trackedID, Vector3 point, Vector3 dir, float intensity)
+        public static void UberShatterableShatter(int trackedID, Vector3 point, Vector3 dir, float intensity, byte[] data, int clientID = 0)
         {
             using (Packet packet = new Packet((int)ServerPackets.uberShatterableShatter))
             {
@@ -1627,8 +1629,24 @@ namespace H3MP.Networking
                 packet.Write(point);
                 packet.Write(dir);
                 packet.Write(intensity);
+                if (data == null)
+                {
+                    packet.Write(0);
+                }
+                else
+                {
+                    packet.Write(data.Length);
+                    packet.Write(data);
+                }
 
-                SendTCPDataToAll(packet);
+                if (clientID == 0)
+                {
+                    SendTCPDataToAll(packet);
+                }
+                else
+                {
+                    SendTCPDataToAll(clientID, packet);
+                }
             }
         }
 
@@ -4623,11 +4641,106 @@ namespace H3MP.Networking
             }
         }
 
-        public static void FloaterExplode(int trackedID, int clientID = 0)
+        public static void FloaterBeginDefusing(int trackedID, bool fromController, int clientID = 0)
+        {
+            using (Packet packet = new Packet((int)ServerPackets.floaterBeginDefusing))
+            {
+                packet.Write(trackedID);
+                packet.Write(fromController);
+
+                if (fromController)
+                {
+                    SendTCPDataToAll(clientID, packet);
+                }
+                else
+                {
+                    SendTCPData(clientID, packet);
+                }
+            }
+        }
+
+        public static void FloaterExplode(int trackedID, bool defusing, int clientID = 0)
         {
             using (Packet packet = new Packet((int)ServerPackets.floaterExplode))
             {
                 packet.Write(trackedID);
+                packet.Write(defusing);
+
+                if (clientID == 0)
+                {
+                    SendTCPDataToAll(packet);
+                }
+                else
+                {
+                    SendTCPDataToAll(clientID, packet);
+                }
+            }
+        }
+
+        public static void IrisShatter(int trackedID, byte index, Vector3 point, Vector3 dir, float intensity, int clientID = 0)
+        {
+            using (Packet packet = new Packet((int)ServerPackets.irisShatter))
+            {
+                packet.Write(trackedID);
+                packet.Write(index);
+                packet.Write(point);
+                packet.Write(dir);
+                packet.Write(intensity);
+
+                if (clientID == 0)
+                {
+                    SendTCPDataToAll(packet);
+                }
+                else
+                {
+                    SendTCPDataToAll(clientID, packet);
+                }
+            }
+        }
+
+        public static void IrisShatter(Packet packet, int clientID)
+        {
+            byte[] IDbytes = BitConverter.GetBytes((int)ServerPackets.irisShatter);
+            for (int i = 0; i < 4; ++i)
+            {
+                packet.buffer[i] = IDbytes[i];
+            }
+            packet.readPos = 0;
+
+            if (clientID == 0)
+            {
+                SendTCPDataToAll(packet);
+            }
+            else
+            {
+                SendTCPDataToAll(clientID, packet);
+            }
+        }
+
+        public static void IrisSetState(int trackedID, Construct_Iris.IrisState state, int clientID = 0)
+        {
+            using (Packet packet = new Packet((int)ServerPackets.irisSetState))
+            {
+                packet.Write(trackedID);
+                packet.Write((byte)state);
+
+                if (clientID == 0)
+                {
+                    SendTCPDataToAll(packet);
+                }
+                else
+                {
+                    SendTCPDataToAll(clientID, packet);
+                }
+            }
+        }
+
+        public static void BrutBlockSystemStart(int trackedID, bool next, int clientID = 0)
+        {
+            using (Packet packet = new Packet((int)ServerPackets.brutBlockSystemStart))
+            {
+                packet.Write(trackedID);
+                packet.Write(next);
 
                 if (clientID == 0)
                 {

@@ -1,11 +1,9 @@
 ﻿using FistVR;
 using H3MP.Scripts;
-using RootMotion;
+using H3MP.Tracking;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
+using System.Diagnostics;
 using UnityEngine;
 
 namespace H3MP.Networking
@@ -18,6 +16,10 @@ namespace H3MP.Networking
         private static readonly List<Action> executeCopiedOnMainThread = new List<Action>();
         private static bool actionToExecuteOnMainThread = false;
 
+        public static int updateTimeLimit = 10; // Time limit (ms) we have to apply received updates before leaving it to the next frame
+        public static int updateState = -1; // The packet ID we are currently at in updates. -1 is Main queue
+        public static int updateStateIndex = 0; // Count of how many elements we've gone through this iteration 
+        public static int updateSubStateIndex = -1; // Count of how many elements we've gone through this iteration 
 
         public static readonly DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public static readonly float pingTime = 1;
@@ -30,6 +32,16 @@ namespace H3MP.Networking
 
         private void FixedUpdate()
         {
+            // TODO: Optimization: Spread updates in UpdateMainFixed over the entire tick period
+            //                     instead of doing all of them every call
+            // Limit sending updates to tickrate
+            //timer -= Time.fixedDeltaTime;
+            //if (timer <= 0)
+            //{
+            //    UpdateMainFixed();
+            //    timer = time;
+            //}
+
             UpdateMainFixed();
         }
 
@@ -71,13 +83,14 @@ namespace H3MP.Networking
 #if DEBUG
                 if (Input.GetKey(KeyCode.PageDown))
                 {
-                    Mod.LogInfo("Actions to execute: "+ executeCopiedOnMainThread.Count);
+                    Mod.LogInfo("Actions to execute: " + executeCopiedOnMainThread.Count);
                 }
 #endif
 
                 for (int i = 0; i < executeCopiedOnMainThread.Count; i++)
                 {
                     executeCopiedOnMainThread[i]();
+                    updateStateIndex = i;
                 }
             }
 

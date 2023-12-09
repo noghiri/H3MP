@@ -6,7 +6,7 @@ using FistVR;
 using System.Collections.Generic;
 using H3MP.Patches;
 using H3MP.Tracking;
-using System.Security.Policy;
+using H3MP.Scripts;
 
 namespace H3MP.Networking
 {
@@ -325,11 +325,14 @@ namespace H3MP.Networking
 #if DEBUG
                                 if (Input.GetKey(KeyCode.PageDown))
                                 {
-                                    Mod.LogInfo("\tHandling UDP packet: " + packetID + " ("+(ClientPackets)packetID+"), length: " + packet.buffer.Count+", from client "+ID);
+                                    Mod.LogInfo("\tHandling UDP packet: " + packetID + " (" + (ClientPackets)packetID + "), length: " + packet.buffer.Count + ", from client " + ID);
                                 }
 #endif
                                 Server.packetHandlers[packetID](ID, packet);
                             }
+
+                            packet.Dispose();
+
                         }
                     }
                 });
@@ -445,10 +448,12 @@ namespace H3MP.Networking
             if (GameManager.objectsByInstanceByScene.TryGetValue(player.scene, out Dictionary<int, List<int>> objectInstances) &&
                 objectInstances.TryGetValue(player.instance, out List<int> objects))
             {
-                for(int i=0; i < objects.Count; ++i)
+                Mod.LogInfo("\tGot "+objects.Count+" objects to send");
+                for (int i=0; i < objects.Count; ++i)
                 {
                     TrackedObjectData trackedObjectData = Server.objects[objects[i]];
-                    if(trackedObjectData != null && (fromClient == -1 || trackedObjectData.controller == fromClient))
+                    Mod.LogInfo("\t\tObject "+i+" null: "+(trackedObjectData == null));
+                    if (trackedObjectData != null && (fromClient == -1 || trackedObjectData.controller == fromClient))
                     {
                         // If this is ours
                         if(trackedObjectData.controller == 0)
@@ -461,9 +466,10 @@ namespace H3MP.Networking
                                 continue;
                             }
 
-                            // If sending, make sure it init otherwise we might be missing data
+                            // If sending, make sure it is init otherwise we might be missing data
                             trackedObjectData.Update();
                         }
+                        Mod.LogInfo("\t\t\tSending");
                         ServerSend.TrackedObjectSpecific(trackedObjectData, ID);
                     }
                 }

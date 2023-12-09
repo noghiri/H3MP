@@ -5,7 +5,6 @@ using System.Net;
 using System.Collections.Generic;
 using H3MP.Tracking;
 using FistVR;
-using System.IO;
 using System.Timers;
 
 namespace H3MP.Networking
@@ -336,7 +335,7 @@ namespace H3MP.Networking
         {
             TrackedObjectData[] tempObjects = objects;
             objects = new TrackedObjectData[tempObjects.Length + 100];
-            for(int i=0; i< tempObjects.Length;++i)
+            for (int i = 0; i < tempObjects.Length; ++i)
             {
                 objects[i] = tempObjects[i];
             }
@@ -540,6 +539,10 @@ namespace H3MP.Networking
                 ServerHandle.FloaterCoreDamage,
                 ServerHandle.FloaterBeginExploding,
                 ServerHandle.FloaterExplode,
+                ServerHandle.IrisShatter,
+                ServerHandle.IrisSetState,
+                ServerHandle.BrutBlockSystemStart,
+                ServerHandle.FloaterBeginDefusing,
                 ServerHandle.BatchedPackets
             };
 

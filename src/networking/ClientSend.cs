@@ -8,6 +8,9 @@ namespace H3MP.Networking
 {
     public class ClientSend
     {
+        // TODO: Optimization: Use array instead of dictionry, packet ID would be the position in the array
+        //                     and used instead of a key to find our packet. A simple Queue<int> would be used to 
+        //                     keep track of exactly which IDs we need to batch
         public static Dictionary<object, byte[]> queuedPackets = new Dictionary<object, byte[]>();
         
         private static void ConvertToCustomID(Packet packet)
@@ -58,7 +61,10 @@ namespace H3MP.Networking
                 ConvertToCustomID(packet);
             }
 
-            if (key == null) key = new object();
+            if (key == null)
+            {
+                key = new object();
+            }
             packet.WriteLength();
 
             lock (queuedPackets)
@@ -69,7 +75,6 @@ namespace H3MP.Networking
 
         public static void SendBatchedPackets()
         {
-            
             List<byte[]> packetsToSend = new List<byte[]>();
             lock (queuedPackets)
             {
@@ -81,7 +86,7 @@ namespace H3MP.Networking
             
             Packet batchedPacket = new Packet((int) ClientPackets.batchedPacket);
             
-            foreach (var packetData in packetsToSend)
+            foreach (byte[] packetData in packetsToSend)
             {
 
                 // If the data of this packet would put us over the MTU, send what we have now
@@ -268,77 +273,6 @@ namespace H3MP.Networking
                     ObjectUpdate(trackedObject);
                 }
             }
-
-            //int index = 0;
-            //while (index < GameManager.objects.Count)
-            //{
-            //    using (Packet packet = new Packet((int)ClientPackets.trackedObjects))
-            //    {
-            //        // Write place holder int at start to hold the count once we know it
-            //        int countPos = packet.buffer.Count;
-            //        packet.Write((short)0);
-
-            //        short count = 0;
-            //        for (int i = index; i < GameManager.objects.Count; ++i)
-            //        {
-            //            TrackedObjectData trackedObject = GameManager.objects[i];
-
-            //            if(trackedObject.trackedID == -1)
-            //            {
-            //                ++index;
-            //                continue;
-            //            }
-
-            //            if (trackedObject.Update())
-            //            {
-            //                trackedObject.latestUpdateSent = false;
-
-            //                // Keep length before we write backet
-            //                int preLength = packet.buffer.Count;
-            //                packet.Write((ushort)0); // Place holder
-
-            //                // Write packet
-            //                trackedObject.WriteToPacket(packet, true, false);
-
-            //                // Replace placeholder with length of object data
-            //                byte[] actualLength = BitConverter.GetBytes((ushort)(packet.buffer.Count - preLength - 2));
-            //                packet.buffer[preLength] = actualLength[0];
-            //                packet.buffer[preLength + 1] = actualLength[1];
-
-            //                ++count;
-
-            //                // Limit buffer size to MTU, will send next set of tracked objects in separate packet
-            //                if (packet.buffer.Count >= 1200)
-            //                {
-            //                    break;
-            //                }
-            //            }
-            //            else if(!trackedObject.latestUpdateSent)
-            //            {
-            //                trackedObject.latestUpdateSent = true;
-
-            //                // Send latest update on its own
-            //                ObjectUpdate(trackedObject);
-            //            }
-
-            //            ++index;
-            //        }
-
-            //        if (count == 0)
-            //        {
-            //            break;
-            //        }
-
-            //        // Write the count to packet
-            //        byte[] countArr = BitConverter.GetBytes(count);
-            //        for (int i = countPos, j = 0; i < countPos + 2; ++i, ++j)
-            //        {
-            //            packet.buffer[i] = countArr[j];
-            //        }
-
-            //        SendUDPData(packet);
-            //    }
-            //}
         }
 
         public static void ObjectUpdate(TrackedObjectData objectData)
@@ -862,7 +796,7 @@ namespace H3MP.Networking
             }
         }
 
-        public static void UberShatterableShatter(int trackedID, Vector3 point, Vector3 dir, float intensity)
+        public static void UberShatterableShatter(int trackedID, Vector3 point, Vector3 dir, float intensity, byte[] data)
         {
             using (Packet packet = new Packet((int)ClientPackets.uberShatterableShatter))
             {
@@ -870,6 +804,15 @@ namespace H3MP.Networking
                 packet.Write(point);
                 packet.Write(dir);
                 packet.Write(intensity);
+                if(data == null)
+                {
+                    packet.Write(0);
+                }
+                else
+                {
+                    packet.Write(data.Length);
+                    packet.Write(data);
+                }
 
                 SendTCPData(packet);
             }
@@ -2772,11 +2715,59 @@ namespace H3MP.Networking
             }
         }
 
-        public static void FloaterExplode(int trackedID)
+        public static void FloaterBeginDefusing(int trackedID, bool control)
+        {
+            using (Packet packet = new Packet((int)ClientPackets.floaterBeginDefusing))
+            {
+                packet.Write(trackedID);
+                packet.Write(control);
+
+                SendTCPData(packet);
+            }
+        }
+
+        public static void FloaterExplode(int trackedID, bool defusing)
         {
             using (Packet packet = new Packet((int)ClientPackets.floaterExplode))
             {
                 packet.Write(trackedID);
+                packet.Write(defusing);
+
+                SendTCPData(packet);
+            }
+        }
+
+        public static void IrisShatter(int trackedID, byte index, Vector3 point, Vector3 dir, float intensity)
+        {
+            using (Packet packet = new Packet((int)ClientPackets.irisShatter))
+            {
+                packet.Write(trackedID);
+                packet.Write(index);
+                packet.Write(point);
+                packet.Write(dir);
+                packet.Write(intensity);
+
+                SendTCPData(packet);
+            }
+        }
+
+        public static void IrisSetState(int trackedID, Construct_Iris.IrisState s)
+        {
+            using (Packet packet = new Packet((int)ClientPackets.irisSetState))
+            {
+                packet.Write(trackedID);
+                packet.Write((byte)s);
+
+                SendTCPData(packet);
+            }
+        }
+
+        public static void BrutBlockSystemStart(int trackedID, bool next)
+        {
+            using (Packet packet = new Packet((int)ClientPackets.brutBlockSystemStart))
+            {
+                packet.Write(trackedID);
+                packet.Write(next);
 
                 SendTCPData(packet);
             }

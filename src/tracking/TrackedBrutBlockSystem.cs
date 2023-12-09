@@ -1,17 +1,12 @@
 ﻿using FistVR;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace H3MP.Tracking
 {
-    public class TrackedFloater : TrackedObject
+    public class TrackedBrutBlockSystem : TrackedObject
     {
-        public Construct_Floater physicalFloater;
-        public TrackedFloaterData floaterData;
-
-        public static List<uint> unknownFloaterBeginExploding = new List<uint>();
-        public static List<uint> unknownFloaterBeginDefusing = new List<uint>();
-        public static Dictionary<uint, bool> unknownFloaterExplode = new Dictionary<uint, bool>();
+        public BrutBlockSystem physicalBrutBlockSystem;
+        public TrackedBrutBlockSystemData brutBlockSystemData;
 
         public override void Awake()
         {
@@ -44,7 +39,7 @@ namespace H3MP.Tracking
             trackedReferenceObjects[refIndex] = trackedItemRef;
             trackedReferences[refIndex] = this;
             trackedItemRef.name = refIndex.ToString();
-            GetComponent<Construct_Floater>().SpawnOnSplode.Add(trackedItemRef);
+            GetComponent<BrutBlockSystem>().BlockPointUppers.Add(trackedItemRef.transform);
         }
 
         protected override void OnDestroy()
@@ -55,10 +50,8 @@ namespace H3MP.Tracking
                 return;
             }
 
-            // Remove from tracked lists, which has to be done no matter what OnDestroy because we will not have the physical object anymore
-            GameManager.trackedFloaterByFloater.Remove(physicalFloater);
-            GameManager.trackedObjectByDamageable.Remove(physicalFloater);
-            GameManager.trackedObjectByDamageable.Remove(physicalFloater.GetComponentInChildren<Construct_Floater_Core>());
+            // Remove from tracked lists, which has to be done no matter what OnDestroy because we will not have the physicalObject anymore
+            GameManager.trackedBrutBlockSystemByBrutBlockSystem.Remove(physicalBrutBlockSystem);
 
             base.OnDestroy();
         }

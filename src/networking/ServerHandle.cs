@@ -77,9 +77,9 @@ namespace H3MP.Networking
             }
 
             GameManager.UpdatePlayerState(player.ID, player.position, player.rotation, player.headPos, player.headRot, player.torsoPos, player.torsoRot,
-                                            player.leftHandPos, player.leftHandRot,
-                                            player.rightHandPos, player.rightHandRot,
-                                            player.health, player.maxHealth, additionalData);
+                                          player.leftHandPos, player.leftHandRot,
+                                          player.rightHandPos, player.rightHandRot,
+                                          player.health, player.maxHealth, additionalData);
 
             // Relay
             ServerSend.PlayerState(packet, player);
@@ -1417,26 +1417,29 @@ namespace H3MP.Networking
         {
             int trackedID = packet.ReadInt();
 
-            TrackedItemData trackedItem = Server.objects[trackedID] as TrackedItemData;
-            if (trackedItem != null)
+            TrackedObjectData trackedObject = Server.objects[trackedID];
+            if (trackedObject != null)
             {
-                trackedItem.additionalData = new byte[30];
-                trackedItem.additionalData[0] = 1;
-                trackedItem.additionalData[1] = 1;
-                for (int i = 2, j = 0; i < 30; ++i, ++j)
+                if(trackedObject.physical != null)
                 {
-                    trackedItem.additionalData[i] = packet.readableBuffer[packet.readPos + j];
+                    trackedObject.physical.HandleShatter(null, packet.ReadVector3(), packet.ReadVector3(), packet.ReadFloat(), true, clientID, packet.ReadBytes(packet.ReadInt()));
                 }
+                //trackedItem.additionalData = new byte[30];
+                //trackedItem.additionalData[0] = 1;
+                //trackedItem.additionalData[1] = 1;
+                //for (int i = 2, j = 0; i < 30; ++i, ++j)
+                //{
+                //    trackedItem.additionalData[i] = packet.readableBuffer[packet.readPos + j];
+                //}
 
-                if (trackedItem.physical != null)
-                {
-                    ++UberShatterableShatterPatch.skip;
-                    (trackedItem.physicalItem.dataObject as UberShatterable).Shatter(packet.ReadVector3(), packet.ReadVector3(), packet.ReadFloat());
-                    --UberShatterableShatterPatch.skip;
-                }
+                //if (trackedItem.physical != null)
+                //{
+                //    ++UberShatterableShatterPatch.skip;
+                //    (trackedItem.physicalItem.dataObject as UberShatterable).Shatter(packet.ReadVector3(), packet.ReadVector3(), packet.ReadFloat());
+                //    --UberShatterableShatterPatch.skip;
+                //}
+                ServerSend.UberShatterableShatter(clientID, packet);
             }
-
-            ServerSend.UberShatterableShatter(clientID, packet);
         }
 
         public static void SosigPickUpItem(int clientID, Packet packet)
@@ -5285,21 +5288,117 @@ namespace H3MP.Networking
             }
         }
 
+        public static void FloaterBeginDefusing(int clientID, Packet packet)
+        {
+            int trackedID = packet.ReadInt();
+            bool fromController = packet.ReadBool();
+
+            TrackedFloaterData trackedFloaterData = Server.objects[trackedID] as TrackedFloaterData;
+            if (trackedFloaterData != null)
+            {
+                if (fromController) // From controller, trigger explosion on our side
+                {
+                    FloaterPatch.beginExplodingOverride = true;
+                    trackedFloaterData.physicalFloater.physicalFloater.BeginDefusing();
+                    FloaterPatch.beginExplodingOverride = false;
+
+                    ServerSend.FloaterBeginDefusing(trackedID, true, trackedFloaterData.controller);
+                }
+                else if(trackedFloaterData.controller == GameManager.ID) // We control, trigger explosion and send order to everyone else
+                {
+                    trackedFloaterData.physicalFloater.physicalFloater.BeginDefusing();
+                }
+                else // Not from controller and we don't control, relay to controller
+                {
+                    ServerSend.FloaterBeginDefusing(trackedID, false, trackedFloaterData.controller);
+                }
+
+            }
+        }
+
         public static void FloaterExplode(int clientID, Packet packet)
         {
             int trackedID = packet.ReadInt();
+            bool defusing = packet.ReadBool();
 
             TrackedFloaterData trackedFloaterData = Server.objects[trackedID] as TrackedFloaterData;
             if (trackedFloaterData != null)
             {
                 if (trackedFloaterData.physicalFloater != null)
                 {
+                    trackedFloaterData.physicalFloater.physicalFloater.isExplosionDefuse = defusing;
+
                     ++FloaterPatch.explodeSkip;
                     trackedFloaterData.physicalFloater.physicalFloater.BeginExploding();
                     --FloaterPatch.explodeSkip;
                 }
 
-                ServerSend.FloaterExplode(trackedID, clientID);
+                ServerSend.FloaterExplode(trackedID, defusing, clientID);
+            }
+        }
+
+        public static void IrisShatter(int clientID, Packet packet)
+        {
+            int trackedID = packet.ReadInt();
+
+            TrackedIrisData trackedIrisData = Server.objects[trackedID] as TrackedIrisData;
+            if (trackedIrisData != null)
+            {
+                if (trackedIrisData.physicalIris != null)
+                {
+                    byte index = packet.ReadByte();
+                    Vector3 point = packet.ReadVector3();
+                    Vector3 dir = packet.ReadVector3();
+                    float intensity = packet.ReadFloat();
+
+                    ++UberShatterableShatterPatch.skip;
+                    trackedIrisData.physicalIris.physicalIris.Rings[index].Shatter(point, dir, intensity);
+                    --UberShatterableShatterPatch.skip;
+                }
+
+                ServerSend.IrisShatter(packet, clientID);
+            }
+        }
+
+        public static void IrisSetState(int clientID, Packet packet)
+        {
+            int trackedID = packet.ReadInt();
+            Construct_Iris.IrisState state = (Construct_Iris.IrisState)packet.ReadByte();
+
+            TrackedIrisData trackedIrisData = Server.objects[trackedID] as TrackedIrisData;
+            if (trackedIrisData != null)
+            {
+                trackedIrisData.state = state;
+
+                if (trackedIrisData.physicalIris != null)
+                {
+                    ++IrisPatch.stateSkip;
+                    trackedIrisData.physicalIris.physicalIris.SetState(state);
+                    --IrisPatch.stateSkip;
+                }
+
+                ServerSend.IrisSetState(trackedID, state, clientID);
+            }
+        }
+
+        public static void BrutBlockSystemStart(int clientID, Packet packet)
+        {
+            int trackedID = packet.ReadInt();
+            bool next = packet.ReadBool();
+
+            TrackedBrutBlockSystemData trackedBrutBlockSystemData = Server.objects[trackedID] as TrackedBrutBlockSystemData;
+            if (trackedBrutBlockSystemData != null)
+            {
+                if (trackedBrutBlockSystemData.physicalBrutBlockSystem != null)
+                {
+                    trackedBrutBlockSystemData.physicalBrutBlockSystem.physicalBrutBlockSystem.isNextBlock0 = next;
+
+                    ++BrutBlockSystemPatch.startSkip;
+                    trackedBrutBlockSystemData.physicalBrutBlockSystem.physicalBrutBlockSystem.TryToStartBlock();
+                    --BrutBlockSystemPatch.startSkip;
+                }
+
+                ServerSend.BrutBlockSystemStart(trackedID, next, clientID);
             }
         }
 

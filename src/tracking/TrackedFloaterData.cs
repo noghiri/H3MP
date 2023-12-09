@@ -2,7 +2,6 @@
 using H3MP.Networking;
 using H3MP.Patches;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace H3MP.Tracking
@@ -84,7 +83,6 @@ namespace H3MP.Tracking
         public override IEnumerator Instantiate()
         {
             Mod.LogInfo("Instantiating floater at " + trackedID, false);
-            yield return IM.OD["SosigBody_Default"].GetGameObjectAsync();
             GameObject prefab = null;
             Construct_Floater_Volume floaterVolume = GameObject.FindObjectOfType<Construct_Floater_Volume>();
             if (floaterVolume == null)
@@ -180,9 +178,15 @@ namespace H3MP.Tracking
 
                 TrackedFloater.unknownFloaterBeginExploding.Remove(localWaitingIndex);
             }
-            if (localTrackedID != -1 && TrackedFloater.unknownFloaterExplode.Contains(localWaitingIndex))
+            if (localTrackedID != -1 && TrackedFloater.unknownFloaterBeginDefusing.Contains(localWaitingIndex))
             {
-                ClientSend.FloaterExplode(trackedID);
+                ClientSend.FloaterBeginDefusing(trackedID, true);
+
+                TrackedFloater.unknownFloaterBeginDefusing.Remove(localWaitingIndex);
+            }
+            if (localTrackedID != -1 && TrackedFloater.unknownFloaterExplode.TryGetValue(localWaitingIndex, out bool defusing))
+            {
+                ClientSend.FloaterExplode(trackedID, defusing);
 
                 TrackedFloater.unknownFloaterExplode.Remove(localWaitingIndex);
             }

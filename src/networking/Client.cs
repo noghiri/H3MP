@@ -226,6 +226,7 @@ namespace H3MP.Networking
                 // If so, it means we have enough data to build a packet we can process
                 while(packetLength > 0 && packetLength <= receivedData.UnreadLength())
                 {
+                    // TODO: // When player state handler dont forget int ID = packet.ReadInt();
                     readLength = false;
                     // So here we take all the data for that new packet
                     byte[] packetBytes = receivedData.ReadBytes(packetLength);
@@ -394,10 +395,10 @@ namespace H3MP.Networking
 
             public void HandleData(byte[] data)
             {
-                using(Packet packet = new Packet(data))
+                using(Packet prePacket = new Packet(data))
                 {
-                    int packetLength = packet.ReadInt();
-                    data = packet.ReadBytes(packetLength);
+                    int packetLength = prePacket.ReadInt();
+                    data = prePacket.ReadBytes(packetLength);
                 }
 
                 ThreadManager.ExecuteOnMainThread(() =>
@@ -407,6 +408,7 @@ namespace H3MP.Networking
                         using (Packet packet = new Packet(data))
                         {
                             int packetID = packet.ReadInt();
+
                             if (packetID < 0)
                             {
                                 if (packetID == -1)
@@ -439,7 +441,7 @@ namespace H3MP.Networking
 #if DEBUG
                                 if (Input.GetKey(KeyCode.PageDown))
                                 {
-                                    Mod.LogInfo("\tHandling UDP packet: " + packetID+" ("+(ServerPackets)packetID+"), length: "+packet.buffer.Count);
+                                    Mod.LogInfo("\tHandling UDP packet: " + packetID + " (" + (ServerPackets)packetID + "), length: " + packet.buffer.Count);
                                 }
 #endif
                                 packetHandlers[packetID](packet);
@@ -656,6 +658,10 @@ namespace H3MP.Networking
                 ClientHandle.FloaterCoreDamage,
                 ClientHandle.FloaterBeginExploding,
                 ClientHandle.FloaterExplode,
+                ClientHandle.IrisShatter,
+                ClientHandle.IrisSetState,
+                ClientHandle.BrutBlockSystemStart,
+                ClientHandle.FloaterBeginDefusing,
                 ClientHandle.BatchedPackets
             };
 

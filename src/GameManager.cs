@@ -38,6 +38,7 @@ namespace H3MP
         public static Dictionary<MonoBehaviour, TrackedObject> trackedObjectByObject = new Dictionary<MonoBehaviour, TrackedObject>();
         public static Dictionary<FVRInteractiveObject, TrackedObject> trackedObjectByInteractive = new Dictionary<FVRInteractiveObject, TrackedObject>();
         public static Dictionary<IFVRDamageable, TrackedObject> trackedObjectByDamageable = new Dictionary<IFVRDamageable, TrackedObject>();
+        public static Dictionary<UberShatterable, TrackedObject> trackedObjectByShatterable = new Dictionary<UberShatterable, TrackedObject>();
         public static Dictionary<FVRPhysicalObject, TrackedItem> trackedItemByItem = new Dictionary<FVRPhysicalObject, TrackedItem>();
         public static Dictionary<SosigWeapon, TrackedItem> trackedItemBySosigWeapon = new Dictionary<SosigWeapon, TrackedItem>();
         public static Dictionary<Sosig, TrackedSosig> trackedSosigBySosig = new Dictionary<Sosig, TrackedSosig>();
@@ -46,8 +47,10 @@ namespace H3MP
         public static Dictionary<BreakableGlass, TrackedBreakableGlass> trackedBreakableGlassByBreakableGlass = new Dictionary<BreakableGlass, TrackedBreakableGlass>();
         public static Dictionary<BreakableGlassDamager, TrackedBreakableGlass> trackedBreakableGlassByBreakableGlassDamager = new Dictionary<BreakableGlassDamager, TrackedBreakableGlass>();
         public static Dictionary<wwGatlingGun, TrackedGatlingGun> trackedGatlingGunByGatlingGun = new Dictionary<wwGatlingGun, TrackedGatlingGun>();
+        public static Dictionary<BrutBlockSystem, TrackedBrutBlockSystem> trackedBrutBlockSystemByBrutBlockSystem = new Dictionary<BrutBlockSystem, TrackedBrutBlockSystem>();
         public static Dictionary<Construct_Blister, TrackedBlister> trackedBlisterByBlister = new Dictionary<Construct_Blister, TrackedBlister>();
         public static Dictionary<Construct_Floater, TrackedFloater> trackedFloaterByFloater = new Dictionary<Construct_Floater, TrackedFloater>();
+        public static Dictionary<Construct_Iris, TrackedIris> trackedIrisByIris = new Dictionary<Construct_Iris, TrackedIris>();
         public static Dictionary<int, int> activeInstances = new Dictionary<int, int>();
         public static Dictionary<int, TNHInstance> TNHInstances = new Dictionary<int, TNHInstance>();
         public static List<int> playersAtLoadStart;
@@ -61,7 +64,7 @@ namespace H3MP
         public static bool resetSpectatorHost;
         public static bool instanceBringItems;
         public static long ping = -1;
-        public static int reconnectionInstance;
+        public static int reconnectionInstance = -1;
 
         /// <summary>
         /// CUSTOMIZATION
@@ -444,6 +447,12 @@ namespace H3MP
             trackedEncryptionByEncryption.Clear();
             trackedBreakableGlassByBreakableGlass.Clear();
             trackedBreakableGlassByBreakableGlassDamager.Clear();
+            trackedBlisterByBlister.Clear();
+            trackedFloaterByFloater.Clear();
+            trackedGatlingGunByGatlingGun.Clear();
+            trackedBrutBlockSystemByBrutBlockSystem.Clear();
+            trackedIrisByIris.Clear();
+            trackedObjectByShatterable.Clear();
             if (playersAtLoadStart != null)
             {
                 playersAtLoadStart.Clear();
@@ -525,7 +534,11 @@ namespace H3MP
             TrackedEncryption.unknownUpdateDisplay.Clear();
 
             TrackedFloater.unknownFloaterBeginExploding.Clear();
+            TrackedFloater.unknownFloaterBeginDefusing.Clear();
             TrackedFloater.unknownFloaterExplode.Clear();
+
+            TrackedIris.unknownIrisShatter.Clear();
+            TrackedIris.unknownIrisSetState.Clear();
         }
 
         public static void UpdatePlayerState(int ID, Vector3 position, Quaternion rotation, Vector3 headPos, Quaternion headRot, Vector3 torsoPos, Quaternion torsoRot,
@@ -1195,7 +1208,7 @@ namespace H3MP
 
         public static void SetInstance(int instance)
         {
-            Mod.LogInfo("Changing instance from " + GameManager.instance + " to " + instance, false);
+            Mod.LogInfo("Changing instance from " + GameManager.instance + " to " + instance+":\n"+Environment.StackTrace, false);
             // Remove ourselves from the previous instance and manage dicts accordingly
             if (activeInstances.ContainsKey(GameManager.instance))
             {
