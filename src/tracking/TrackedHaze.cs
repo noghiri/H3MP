@@ -5,14 +5,10 @@ using UnityEngine;
 
 namespace H3MP.Tracking
 {
-    public class TrackedFloater : TrackedObject
+    public class TrackedHaze : TrackedObject
     {
-        public Construct_Floater physicalFloater;
-        public TrackedFloaterData floaterData;
-
-        public static List<uint> unknownFloaterBeginExploding = new List<uint>();
-        public static List<uint> unknownFloaterBeginDefusing = new List<uint>();
-        public static Dictionary<uint, bool> unknownFloaterExplode = new Dictionary<uint, bool>();
+        public Construct_Haze physicalHaze;
+        public TrackedHazeData hazeData;
 
         public override void Awake()
         {
@@ -21,6 +17,7 @@ namespace H3MP.Tracking
             GameObject trackedItemRef = new GameObject();
             trackedItemRef.transform.parent = transform;
             TrackedObjectReference refScript = trackedItemRef.AddComponent<TrackedObjectReference>();
+            ParticleSystem PSScript = trackedItemRef.AddComponent<ParticleSystem>();
             trackedItemRef.SetActive(false);
 
             CheckReferenceSize();
@@ -30,7 +27,7 @@ namespace H3MP.Tracking
             trackedReferences[refIndex] = this;
             trackedItemRef.name = refIndex.ToString();
             refScript.refIndex = refIndex;
-            GetComponent<Construct_Floater>().SpawnOnSplode.Add(trackedItemRef);
+            GetComponent<Construct_Haze>().PSystem2 = PSScript;
         }
 
         protected override void OnDestroy()
@@ -42,9 +39,8 @@ namespace H3MP.Tracking
             }
 
             // Remove from tracked lists, which has to be done no matter what OnDestroy because we will not have the physical object anymore
-            GameManager.trackedFloaterByFloater.Remove(physicalFloater);
-            GameManager.trackedObjectByDamageable.Remove(physicalFloater);
-            GameManager.trackedObjectByDamageable.Remove(physicalFloater.GetComponentInChildren<Construct_Floater_Core>());
+            GameManager.trackedHazeByHaze.Remove(physicalHaze);
+            GameManager.trackedObjectByDamageable.Remove(physicalHaze);
 
             base.OnDestroy();
         }

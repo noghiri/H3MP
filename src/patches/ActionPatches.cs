@@ -40,7 +40,14 @@ namespace H3MP.Patches
             MethodInfo fireSosigWeaponPatchPostfix = typeof(FireSosigWeaponPatch).GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static);
 
             PatchController.Verify(fireSosigWeaponPatchOriginal, harmony, true);
-            harmony.Patch(fireSosigWeaponPatchOriginal, new HarmonyMethod(fireSosigWeaponPatchPrefix), new HarmonyMethod(fireSosigWeaponPatchPostfix), new HarmonyMethod(fireSosigWeaponPatchTranspiler));
+            try
+            {
+                harmony.Patch(fireSosigWeaponPatchOriginal, new HarmonyMethod(fireSosigWeaponPatchPrefix), new HarmonyMethod(fireSosigWeaponPatchPostfix), new HarmonyMethod(fireSosigWeaponPatchTranspiler));
+            }
+            catch (Exception ex)
+            {
+                Mod.LogError("Exception caught applying ActionPatches.FireSosigWeaponPatch: " + ex.Message + ":\n" + ex.StackTrace);
+            }
 
             ++patchIndex; // 2
 
@@ -679,12 +686,15 @@ namespace H3MP.Patches
             MethodInfo EncryptionPatchUpdateDisplayPostfix = typeof(EncryptionPatch).GetMethod("UpdateDisplayPostfix", BindingFlags.NonPublic | BindingFlags.Static);
             MethodInfo EncryptionPatchDestroyOriginal = typeof(TNH_EncryptionTarget).GetMethod("Destroy", BindingFlags.NonPublic | BindingFlags.Instance);
             MethodInfo EncryptionPatchDestroyTranspiler = typeof(EncryptionPatch).GetMethod("DestroyTranspiler", BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo EncryptionPatchFireGunOriginal = typeof(TNH_EncryptionTarget).GetMethod("FireGun", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo EncryptionPatchFireGunPrefix = typeof(EncryptionPatch).GetMethod("FireGunPrefix", BindingFlags.NonPublic | BindingFlags.Static);
 
             PatchController.Verify(EncryptionPatchUpdateOriginal, harmony, true);
             PatchController.Verify(EncryptionPatchFixedUpdateOriginal, harmony, true);
             PatchController.Verify(EncryptionPatchStartOriginal, harmony, true);
             PatchController.Verify(EncryptionPatchUpdateDisplayOriginal, harmony, true);
             PatchController.Verify(EncryptionPatchDestroyOriginal, harmony, true);
+            PatchController.Verify(EncryptionPatchFireGunOriginal, harmony, true);
             try 
             { 
                 harmony.Patch(EncryptionPatchUpdateOriginal, new HarmonyMethod(EncryptionPatchUpdatePrefix), null, new HarmonyMethod(EncryptionPatchUpdateTranspiler));
@@ -704,6 +714,7 @@ namespace H3MP.Patches
             {
                 Mod.LogError("Exception caught applying ActionPatches.EncryptionPatch on EncryptionPatchDestroyOriginal: " + ex.Message + ":\n" + ex.StackTrace);
             }
+            harmony.Patch(EncryptionPatchFireGunOriginal, new HarmonyMethod(EncryptionPatchFireGunPrefix));
 
             ++patchIndex; // 42
 
@@ -1128,6 +1139,45 @@ namespace H3MP.Patches
             PatchController.Verify(brutBlockSystemStartOriginal, harmony, false);
             harmony.Patch(brutBlockSystemUpdateOriginal, new HarmonyMethod(brutBlockSystemUpdatePrefix));
             harmony.Patch(brutBlockSystemStartOriginal, new HarmonyMethod(brutBlockSystemStartPrefix));
+
+            ++patchIndex; // 70
+
+            // NodePatch
+            MethodInfo nodeInitOriginal = typeof(Construct_Node).GetMethod("Init", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo nodeInitPrefix = typeof(NodePatch).GetMethod("InitPrefix", BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo nodeInitPostfix = typeof(NodePatch).GetMethod("InitPostfix", BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo nodeUpdateOriginal = typeof(Construct_Node).GetMethod("FVRUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo nodeUpdatePrefix = typeof(NodePatch).GetMethod("UpdatePrefix", BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo nodeFixedUpdateOriginal = typeof(Construct_Node).GetMethod("FVRFixedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo nodeFixedUpdatePrefix = typeof(NodePatch).GetMethod("FixedUpdatePrefix", BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo nodeFixedUpdateTranspiler = typeof(NodePatch).GetMethod("FixedUpdateTranspiler", BindingFlags.NonPublic | BindingFlags.Static);
+
+            PatchController.Verify(nodeInitOriginal, harmony, false);
+            PatchController.Verify(nodeUpdateOriginal, harmony, false);
+            PatchController.Verify(nodeFixedUpdateOriginal, harmony, false);
+            harmony.Patch(nodeInitOriginal, new HarmonyMethod(nodeInitPrefix), new HarmonyMethod(nodeInitPostfix));
+            harmony.Patch(nodeUpdateOriginal, new HarmonyMethod(nodeUpdatePrefix));
+            try
+            {
+                harmony.Patch(nodeFixedUpdateOriginal, new HarmonyMethod(nodeFixedUpdatePrefix), null, new HarmonyMethod(nodeFixedUpdateTranspiler));
+            }
+            catch (Exception ex)
+            {
+                Mod.LogError("Exception caught applying ActionPatches.NodePatch: " + ex.Message + ":\n" + ex.StackTrace);
+            }
+
+            ++patchIndex; // 71
+
+            // HazePatch
+            MethodInfo hazeUpdateOriginal = typeof(Construct_Haze).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo hazeUpdatePrefix = typeof(HazePatch).GetMethod("UpdatePrefix", BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo hazeFixedUpdateOriginal = typeof(Construct_Haze).GetMethod("FixedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo hazeFixedUpdatePrefix = typeof(HazePatch).GetMethod("FixedUpdatePrefix", BindingFlags.NonPublic | BindingFlags.Static);
+
+            PatchController.Verify(hazeUpdateOriginal, harmony, false);
+            PatchController.Verify(hazeFixedUpdateOriginal, harmony, false);
+            harmony.Patch(hazeUpdateOriginal, new HarmonyMethod(hazeUpdatePrefix));
+            harmony.Patch(hazeFixedUpdateOriginal, new HarmonyMethod(hazeFixedUpdatePrefix));
         }
     }
 
@@ -1422,6 +1472,8 @@ namespace H3MP.Patches
             toInsert1.Add(new CodeInstruction(OpCodes.Ldloc_3)); // Load gameObject
             toInsert1.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(FireSosigWeaponPatch), "GetDirection"))); // Call our GetDirection method
 
+            bool applied0 = false;
+            bool applied1 = false;
             bool skippedFirstPos = false;
             bool skippedFirstDir = false;
             for (int i = 0; i < instructionList.Count; ++i)
@@ -1432,6 +1484,7 @@ namespace H3MP.Patches
                     if (skippedFirstPos)
                     {
                         instructionList.InsertRange(i + 1, toInsert0);
+                        applied0 = true;
                     }
                     else
                     {
@@ -1444,6 +1497,7 @@ namespace H3MP.Patches
                     if (skippedFirstDir)
                     {
                         instructionList.InsertRange(i + 1, toInsert1);
+                        applied1 = true;
                         break;
                     }
                     else
@@ -1452,6 +1506,12 @@ namespace H3MP.Patches
                     }
                 }
             }
+
+            if (!applied0 || !applied1)
+            {
+                Mod.LogError("FireSosigWeaponPatch Transpiler not applied!");
+            }
+
             return instructionList;
         }
 
@@ -3510,6 +3570,10 @@ namespace H3MP.Patches
                         __instance.E.FakePos = __instance.fakeEntityPos;
                         __instance.VaporizeUpdate();
                         __instance.HeadIconUpdate();
+                        if (__instance.m_recoveringFromBallisticState)
+                        {
+                            __instance.UpdateJoints(__instance.m_recoveryFromBallisticLerp);
+                        }
                     }
                     return runOriginal;
                 }
@@ -6231,6 +6295,57 @@ namespace H3MP.Patches
             cascadingDestroyIndex = 0;
             cascadingDestroyDepth = 0;
         }
+
+        static bool FireGunPrefix(TNH_EncryptionTarget __instance)
+        {
+            if (Mod.managerObject == null)
+            {
+                return true;
+            }
+
+            if (int.TryParse(__instance.SpawnPoints[__instance.SpawnPoints.Count - 1].name, out int index))
+            {
+                TrackedEncryption trackedEncryption = TrackedEncryption.trackedEncryptionReferences[index];
+                if (trackedEncryption != null)
+                {
+                    if (trackedEncryption.data.controller == GameManager.ID)
+                    {
+                        float[] vels = new float[__instance.RefractiveMuzzles.Count];
+                        Vector3[] dirs = new Vector3[__instance.RefractiveMuzzles.Count];
+                        for (int i = 0; i < __instance.RefractiveMuzzles.Count; i++)
+                        {
+                            Vector3 position = __instance.RefractiveMuzzles[i].position;
+                            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(__instance.RefractiveProjectile, position, __instance.RefractiveMuzzles[i].rotation);
+                            BallisticProjectile component = gameObject.GetComponent<BallisticProjectile>();
+                            component.FlightVelocityMultiplier = 0.04f;
+                            float muzzleVelocityBase = component.MuzzleVelocityBase;
+                            component.Fire(muzzleVelocityBase, gameObject.transform.forward, null, true);
+
+                            vels[i] = muzzleVelocityBase;
+                            dirs[i] = gameObject.transform.forward;
+
+                            if (ThreadManager.host)
+                            {
+                                ServerSend.EncryptionFireGun(trackedEncryption.data.trackedID, vels, dirs);
+                            }
+                            else
+                            {
+                                ClientSend.EncryptionFireGun(trackedEncryption.data.trackedID, vels, dirs);
+                            }
+                        }
+                        if (__instance.GunShotProfile != null)
+                        {
+                            FVRSoundEnvironment se = __instance.PlayShotEvent(__instance.RefractiveMuzzles[0].position);
+                            float soundTravelDistanceMultByEnvironment = SM.GetSoundTravelDistanceMultByEnvironment(se);
+                        }
+                    }
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     // Patches FVRGrenade to sync
@@ -8202,34 +8317,40 @@ namespace H3MP.Patches
                 return;
             }
 
-            TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[int.Parse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name)];
-            if (trackedGasCuboid != null && trackedGasCuboid.itemData.additionalData[0] < 255)
+            if(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1] != null)
             {
-                byte[] temp = trackedGasCuboid.itemData.additionalData;
-                trackedGasCuboid.itemData.additionalData = new byte[temp.Length + 24];
-                for (int i = 0; i < temp.Length; ++i)
+                if(int.TryParse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name, out int refIndex))
                 {
-                    trackedGasCuboid.itemData.additionalData[i] = temp[i];
-                }
-                ++trackedGasCuboid.itemData.additionalData[1];
+                    TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[refIndex];
+                    if (trackedGasCuboid != null && trackedGasCuboid.itemData.additionalData[0] < 255)
+                    {
+                        byte[] temp = trackedGasCuboid.itemData.additionalData;
+                        trackedGasCuboid.itemData.additionalData = new byte[temp.Length + 24];
+                        for (int i = 0; i < temp.Length; ++i)
+                        {
+                            trackedGasCuboid.itemData.additionalData[i] = temp[i];
+                        }
+                        ++trackedGasCuboid.itemData.additionalData[1];
 
-                if (ThreadManager.host)
-                {
-                    ServerSend.GasCuboidGout(trackedGasCuboid.itemData.trackedID, point, normal);
-                }
-                else if(trackedGasCuboid.itemData.trackedID != -1)
-                {
-                    ClientSend.GasCuboidGout(trackedGasCuboid.itemData.trackedID, point, normal);
-                }
-                else
-                {
-                    if (TrackedItem.unknownGasCuboidGout.TryGetValue(trackedGasCuboid.data.localWaitingIndex, out List<KeyValuePair<Vector3, Vector3>> current))
-                    {
-                        current.Add(new KeyValuePair<Vector3, Vector3>(point, normal));
-                    }
-                    else
-                    {
-                        TrackedItem.unknownGasCuboidGout.Add(trackedGasCuboid.data.localWaitingIndex, new List<KeyValuePair<Vector3, Vector3>>() { new KeyValuePair<Vector3, Vector3>(point, normal) });
+                        if (ThreadManager.host)
+                        {
+                            ServerSend.GasCuboidGout(trackedGasCuboid.itemData.trackedID, point, normal);
+                        }
+                        else if (trackedGasCuboid.itemData.trackedID != -1)
+                        {
+                            ClientSend.GasCuboidGout(trackedGasCuboid.itemData.trackedID, point, normal);
+                        }
+                        else
+                        {
+                            if (TrackedItem.unknownGasCuboidGout.TryGetValue(trackedGasCuboid.data.localWaitingIndex, out List<KeyValuePair<Vector3, Vector3>> current))
+                            {
+                                current.Add(new KeyValuePair<Vector3, Vector3>(point, normal));
+                            }
+                            else
+                            {
+                                TrackedItem.unknownGasCuboidGout.Add(trackedGasCuboid.data.localWaitingIndex, new List<KeyValuePair<Vector3, Vector3>>() { new KeyValuePair<Vector3, Vector3>(point, normal) });
+                            }
+                        }
                     }
                 }
             }
@@ -8243,22 +8364,28 @@ namespace H3MP.Patches
                 return;
             }
 
-            TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[int.Parse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name)];
-            if (trackedGasCuboid != null)
+            if (__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1] != null)
             {
-                trackedGasCuboid.itemData.additionalData[0] = 1;
+                if (int.TryParse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name, out int refIndex))
+                {
+                    TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[refIndex];
+                    if (trackedGasCuboid != null)
+                    {
+                        trackedGasCuboid.itemData.additionalData[0] = 1;
 
-                if (ThreadManager.host)
-                {
-                    ServerSend.GasCuboidDamageHandle(trackedGasCuboid.itemData.trackedID);
-                }
-                else if(trackedGasCuboid.itemData.trackedID != -1)
-                {
-                    ClientSend.GasCuboidDamageHandle(trackedGasCuboid.itemData.trackedID);
-                }
-                else
-                {
-                    TrackedItem.unknownGasCuboidDamageHandle.Add(trackedGasCuboid.data.localWaitingIndex);
+                        if (ThreadManager.host)
+                        {
+                            ServerSend.GasCuboidDamageHandle(trackedGasCuboid.itemData.trackedID);
+                        }
+                        else if (trackedGasCuboid.itemData.trackedID != -1)
+                        {
+                            ClientSend.GasCuboidDamageHandle(trackedGasCuboid.itemData.trackedID);
+                        }
+                        else
+                        {
+                            TrackedItem.unknownGasCuboidDamageHandle.Add(trackedGasCuboid.data.localWaitingIndex);
+                        }
+                    }
                 }
             }
         }
@@ -8271,10 +8398,16 @@ namespace H3MP.Patches
                 return true;
             }
 
-            TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[int.Parse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name)];
-            if (trackedGasCuboid != null)
+            if (__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1] != null)
             {
-                return trackedGasCuboid.itemData.controller == GameManager.ID;
+                if (int.TryParse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name, out int refIndex))
+                {
+                    TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[refIndex];
+                    if (trackedGasCuboid != null)
+                    {
+                        return trackedGasCuboid.itemData.controller == GameManager.ID;
+                    }
+                }
             }
 
             return true;
@@ -8290,16 +8423,22 @@ namespace H3MP.Patches
                 return;
             }
 
-            TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[int.Parse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name)];
-            if (trackedGasCuboid != null)
+            if (__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1] != null)
             {
-                if (ThreadManager.host)
+                if (int.TryParse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name, out int refIndex))
                 {
-                    ServerSend.GasCuboidExplode(trackedGasCuboid.itemData.trackedID, point, dir, isBig);
-                }
-                else
-                {
-                    ClientSend.GasCuboidExplode(trackedGasCuboid.itemData.trackedID, point, dir, isBig);
+                    TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[refIndex];
+                    if (trackedGasCuboid != null)
+                    {
+                        if (ThreadManager.host)
+                        {
+                            ServerSend.GasCuboidExplode(trackedGasCuboid.itemData.trackedID, point, dir, isBig);
+                        }
+                        else
+                        {
+                            ClientSend.GasCuboidExplode(trackedGasCuboid.itemData.trackedID, point, dir, isBig);
+                        }
+                    }
                 }
             }
         }
@@ -8317,16 +8456,22 @@ namespace H3MP.Patches
                 return;
             }
 
-            TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[int.Parse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name)];
-            if (trackedGasCuboid != null)
+            if (__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1] != null)
             {
-                if (ThreadManager.host)
+                if (int.TryParse(__instance.SpawnOnSplodePoints[__instance.SpawnOnSplodePoints.Count - 1].name, out int refIndex))
                 {
-                    ServerSend.GasCuboidShatter(trackedGasCuboid.itemData.trackedID, point, dir);
-                }
-                else
-                {
-                    ClientSend.GasCuboidShatter(trackedGasCuboid.itemData.trackedID, point, dir);
+                    TrackedItem trackedGasCuboid = (TrackedItem)TrackedObject.trackedReferences[refIndex];
+                    if (trackedGasCuboid != null)
+                    {
+                        if (ThreadManager.host)
+                        {
+                            ServerSend.GasCuboidShatter(trackedGasCuboid.itemData.trackedID, point, dir);
+                        }
+                        else
+                        {
+                            ClientSend.GasCuboidShatter(trackedGasCuboid.itemData.trackedID, point, dir);
+                        }
+                    }
                 }
             }
         }
@@ -8346,11 +8491,14 @@ namespace H3MP.Patches
                 return true;
             }
 
-            if (int.TryParse(__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1].name, out int refIndex))
+            if (__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1] != null)
             {
-                // Note: If we got here it is because we are not exploding, meaning that we don't want to continue no matter what if we are not controller
-                TrackedFloater trackedFloater = TrackedObject.trackedReferences[refIndex] as TrackedFloater;
-                return trackedFloater == null || trackedFloater.data.controller == GameManager.ID;
+                if (int.TryParse(__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1].name, out int refIndex))
+                {
+                    // Note: If we got here it is because we are not exploding, meaning that we don't want to continue no matter what if we are not controller
+                    TrackedFloater trackedFloater = TrackedObject.trackedReferences[refIndex] as TrackedFloater;
+                    return trackedFloater == null || trackedFloater.data.controller == GameManager.ID;
+                }
             }
 
             return true;
@@ -8364,10 +8512,13 @@ namespace H3MP.Patches
                 return true;
             }
 
-            if (int.TryParse(__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1].name, out int refIndex))
+            if (__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1] != null)
             {
-                TrackedFloater trackedFloater = TrackedObject.trackedReferences[refIndex] as TrackedFloater;
-                return trackedFloater == null || trackedFloater.data.controller == GameManager.ID;
+                if (int.TryParse(__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1].name, out int refIndex))
+                {
+                    TrackedFloater trackedFloater = TrackedObject.trackedReferences[refIndex] as TrackedFloater;
+                    return trackedFloater == null || trackedFloater.data.controller == GameManager.ID;
+                }
             }
 
             return true;
@@ -8381,30 +8532,33 @@ namespace H3MP.Patches
                 return true;
             }
 
-            if (int.TryParse(__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1].name, out int refIndex))
+            if (__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1] != null)
             {
-                TrackedFloater trackedFloater = TrackedObject.trackedReferences[refIndex] as TrackedFloater;
-                if (trackedFloater != null)
+                if (int.TryParse(__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1].name, out int refIndex))
                 {
-                    bool control = trackedFloater.data.controller == GameManager.ID;
-
-                    if (!beginExplodingOverride)
+                    TrackedFloater trackedFloater = TrackedObject.trackedReferences[refIndex] as TrackedFloater;
+                    if (trackedFloater != null)
                     {
-                        if (ThreadManager.host)
-                        {
-                            ServerSend.FloaterBeginExploding(trackedFloater.data.trackedID, control);
-                        }
-                        else if (trackedFloater.data.trackedID != -1)
-                        {
-                            ClientSend.FloaterBeginExploding(trackedFloater.data.trackedID, control);
-                        }
-                        else // Note that this is only possible if we are the controller
-                        {
-                            TrackedFloater.unknownFloaterBeginExploding.Add(trackedFloater.data.localWaitingIndex);
-                        }
-                    }
+                        bool control = trackedFloater.data.controller == GameManager.ID;
 
-                    return beginExplodingOverride || control;
+                        if (!beginExplodingOverride)
+                        {
+                            if (ThreadManager.host)
+                            {
+                                ServerSend.FloaterBeginExploding(trackedFloater.data.trackedID, control);
+                            }
+                            else if (trackedFloater.data.trackedID != -1)
+                            {
+                                ClientSend.FloaterBeginExploding(trackedFloater.data.trackedID, control);
+                            }
+                            else // Note that this is only possible if we are the controller
+                            {
+                                TrackedFloater.unknownFloaterBeginExploding.Add(trackedFloater.data.localWaitingIndex);
+                            }
+                        }
+
+                        return beginExplodingOverride || control;
+                    }
                 }
             }
 
@@ -8419,30 +8573,33 @@ namespace H3MP.Patches
                 return true;
             }
 
-            if (int.TryParse(__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1].name, out int refIndex))
+            if (__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1] != null)
             {
-                TrackedFloater trackedFloater = TrackedObject.trackedReferences[refIndex] as TrackedFloater;
-                if (trackedFloater != null)
+                if (int.TryParse(__instance.SpawnOnSplode[__instance.SpawnOnSplode.Count - 1].name, out int refIndex))
                 {
-                    bool control = trackedFloater.data.controller == GameManager.ID;
-
-                    if (!beginExplodingOverride)
+                    TrackedFloater trackedFloater = TrackedObject.trackedReferences[refIndex] as TrackedFloater;
+                    if (trackedFloater != null)
                     {
-                        if (ThreadManager.host)
-                        {
-                            ServerSend.FloaterBeginDefusing(trackedFloater.data.trackedID, control);
-                        }
-                        else if (trackedFloater.data.trackedID != -1)
-                        {
-                            ClientSend.FloaterBeginDefusing(trackedFloater.data.trackedID, control);
-                        }
-                        else // Note that this is only possible if we are the controller
-                        {
-                            TrackedFloater.unknownFloaterBeginDefusing.Add(trackedFloater.data.localWaitingIndex);
-                        }
-                    }
+                        bool control = trackedFloater.data.controller == GameManager.ID;
 
-                    return beginExplodingOverride || control;
+                        if (!beginExplodingOverride)
+                        {
+                            if (ThreadManager.host)
+                            {
+                                ServerSend.FloaterBeginDefusing(trackedFloater.data.trackedID, control);
+                            }
+                            else if (trackedFloater.data.trackedID != -1)
+                            {
+                                ClientSend.FloaterBeginDefusing(trackedFloater.data.trackedID, control);
+                            }
+                            else // Note that this is only possible if we are the controller
+                            {
+                                TrackedFloater.unknownFloaterBeginDefusing.Add(trackedFloater.data.localWaitingIndex);
+                            }
+                        }
+
+                        return beginExplodingOverride || control;
+                    }
                 }
             }
 
@@ -8638,12 +8795,15 @@ namespace H3MP.Patches
                 return true;
             }
 
-            if (int.TryParse(__instance.BlockPointUppers[__instance.BlockPointUppers.Count - 1].name, out int refIndex))
+            if (__instance.BlockPointUppers[__instance.BlockPointUppers.Count - 1] != null)
             {
-                TrackedBrutBlockSystem trackedBrutBlockSystem = TrackedObject.trackedReferences[refIndex] as TrackedBrutBlockSystem;
-                if (trackedBrutBlockSystem != null)
+                if (int.TryParse(__instance.BlockPointUppers[__instance.BlockPointUppers.Count - 1].name, out int refIndex))
                 {
-                    return trackedBrutBlockSystem.data.controller == GameManager.ID;
+                    TrackedBrutBlockSystem trackedBrutBlockSystem = TrackedObject.trackedReferences[refIndex] as TrackedBrutBlockSystem;
+                    if (trackedBrutBlockSystem != null)
+                    {
+                        return trackedBrutBlockSystem.data.controller == GameManager.ID;
+                    }
                 }
             }
 
@@ -8658,26 +8818,352 @@ namespace H3MP.Patches
                 return true;
             }
 
-            if(int.TryParse(__instance.BlockPointUppers[__instance.BlockPointUppers.Count - 1].name, out int refIndex))
+            if (__instance.BlockPointUppers[__instance.BlockPointUppers.Count - 1] != null)
             {
-                TrackedBrutBlockSystem trackedBrutBlockSystem = TrackedObject.trackedReferences[refIndex] as TrackedBrutBlockSystem;
-                if (trackedBrutBlockSystem != null)
+                if (int.TryParse(__instance.BlockPointUppers[__instance.BlockPointUppers.Count - 1].name, out int refIndex))
                 {
-                    if (trackedBrutBlockSystem.data.controller == GameManager.ID)
+                    TrackedBrutBlockSystem trackedBrutBlockSystem = TrackedObject.trackedReferences[refIndex] as TrackedBrutBlockSystem;
+                    if (trackedBrutBlockSystem != null)
+                    {
+                        if (trackedBrutBlockSystem.data.controller == GameManager.ID)
+                        {
+                            if (ThreadManager.host)
+                            {
+                                ServerSend.BrutBlockSystemStart(trackedBrutBlockSystem.data.trackedID, __instance.isNextBlock0);
+                            }
+                            else if (trackedBrutBlockSystem.data.trackedID != -1)
+                            {
+                                ClientSend.BrutBlockSystemStart(trackedBrutBlockSystem.data.trackedID, __instance.isNextBlock0);
+                            }
+
+                            return true;
+                        }
+
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+
+    // Patches Construct_Node
+    class NodePatch
+    {
+        // Patches Init to prevent for non controllers 
+        static bool InitPrefix(Construct_Node __instance)
+        {
+            if (Mod.managerObject == null)
+            {
+                return true;
+            }
+
+            if (__instance.Stems[__instance.Stems.Count - 1] != null)
+            {
+                if (int.TryParse(__instance.Stems[__instance.Stems.Count - 1].name, out int refIndex))
+                {
+                    TrackedNode trackedNode = TrackedObject.trackedReferences[refIndex] as TrackedNode;
+                    if (trackedNode != null)
+                    {
+                        return trackedNode.data.controller == GameManager.ID;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        // Patches Init to collect data to send to non controllers 
+        static void InitPostfix(Construct_Node __instance)
+        {
+            if (Mod.managerObject == null)
+            {
+                return;
+            }
+
+            if (__instance.Stems[__instance.Stems.Count - 1] != null)
+            {
+                if (int.TryParse(__instance.Stems[__instance.Stems.Count - 1].name, out int refIndex))
+                {
+                    TrackedNode trackedNode = TrackedObject.trackedReferences[refIndex] as TrackedNode;
+                    if (trackedNode != null && trackedNode.data.controller == GameManager.ID)
+                    {
+                        trackedNode.nodeData.points = trackedNode.physicalNode.Points;
+                        trackedNode.nodeData.ups = trackedNode.physicalNode.Ups;
+
+                        if (ThreadManager.host)
+                        {
+                            ServerSend.NodeInit(trackedNode.data.trackedID, __instance.Points, __instance.Ups);
+                        }
+                        else if (trackedNode.data.trackedID != -1)
+                        {
+                            ClientSend.NodeInit(trackedNode.data.trackedID, __instance.Points, __instance.Ups);
+                        }
+                        else
+                        {
+                            if (!TrackedNode.unknownInit.Contains(trackedNode.data.localWaitingIndex))
+                            {
+                                TrackedNode.unknownInit.Add(trackedNode.data.localWaitingIndex);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Patches FVRUpdate 
+        static bool UpdatePrefix(Construct_Node __instance)
+        {
+            if (Mod.managerObject == null)
+            {
+                return true;
+            }
+
+            if (__instance.Stems[__instance.Stems.Count - 1] != null)
+            {
+                if (int.TryParse(__instance.Stems[__instance.Stems.Count - 1].name, out int refIndex))
+                {
+                    TrackedNode trackedNode = TrackedObject.trackedReferences[refIndex] as TrackedNode;
+                    if (trackedNode != null)
+                    {
+                        if (trackedNode.data.controller != GameManager.ID)
+                        {
+                            if (trackedNode.nodeData.underActiveControl || __instance.soundSilenceTimer < 3f)
+                            {
+                                if (!__instance.AudSource_Loop.isPlaying)
+                                {
+                                    __instance.AudSource_Loop.Play();
+                                }
+                                __instance.AudSource_Loop.volume = Mathf.Lerp(0f, 0.4f, __instance.RB.velocity.magnitude / 1f);
+                                __instance.AudSource_Loop.pitch = Mathf.Lerp(0.85f, 1.15f, __instance.RB.velocity.magnitude / 1f);
+                            }
+                            else if (__instance.AudSource_Loop.isPlaying)
+                            {
+                                __instance.AudSource_Loop.Stop();
+                            }
+
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        // Patches FVRFixedUpdate 
+        static bool FixedUpdatePrefix(Construct_Node __instance)
+        {
+            if (Mod.managerObject == null)
+            {
+                return true;
+            }
+
+            if (__instance.Stems[__instance.Stems.Count - 1] != null)
+            {
+                if (int.TryParse(__instance.Stems[__instance.Stems.Count - 1].name, out int refIndex))
+                {
+                    TrackedNode trackedNode = TrackedObject.trackedReferences[refIndex] as TrackedNode;
+                    if (trackedNode != null)
+                    {
+                        if (trackedNode.data.controller != GameManager.ID)
+                        {
+                            if (trackedNode.nodeData.underActiveControl)
+                            {
+                                if (__instance.damperRecoverTimer < 1f)
+                                {
+                                    __instance.damperRecoverTimer += Time.deltaTime;
+                                }
+                                else
+                                {
+                                    __instance.Joint.damper = 10f;
+                                    __instance.RB.drag = 4f;
+                                }
+                                if (__instance.soundSilenceTimer < 3f)
+                                {
+                                    __instance.soundSilenceTimer += Time.deltaTime;
+                                }
+                            }
+                            if (trackedNode.nodeData.underActiveControl || __instance.RB.velocity.magnitude > 2f)
+                            {
+                                __instance.PSystem.gameObject.SetActive(true);
+                            }
+                            else
+                            {
+                                __instance.PSystem.gameObject.SetActive(false);
+                            }
+                            __instance.UpdateCageStems();
+
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        // Patches FVRFixedUpdate to keep track of firing event
+        static IEnumerable<CodeInstruction> FixedUpdateTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+        {
+            List<CodeInstruction> instructionList = new List<CodeInstruction>(instructions);
+
+            // To get correct pos considering potential override
+            List<CodeInstruction> toInsert = new List<CodeInstruction>();
+            toInsert.Add(new CodeInstruction(OpCodes.Ldarg_0)); // Load node instance
+            toInsert.Add(new CodeInstruction(OpCodes.Ldloc_2)); // Load velocity multiplier
+            toInsert.Add(new CodeInstruction(OpCodes.Ldarg_0)); // Load node instance
+            toInsert.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(Construct_Node), "m_firingDir"))); // Load firing direction
+            toInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(NodePatch), "Fire"))); // Call our Fire method
+
+            bool applied = false;
+            for (int i = 0; i < instructionList.Count; ++i)
+            {
+                CodeInstruction instruction = instructionList[i];
+                if (instruction.opcode == OpCodes.Callvirt && instruction.operand.ToString().Contains("Fire"))
+                {
+                    instructionList.InsertRange(i + 1, toInsert);
+                    applied = true;
+                    break;
+                }
+            }
+
+            if (!applied)
+            {
+                Mod.LogError("NodePatch Transpiler not applied!");
+            }
+
+            return instructionList;
+        }
+
+        public static void Fire(Construct_Node instance, float velMult, Vector3 firingDir)
+        {
+            if (Mod.managerObject == null)
+            {
+                return;
+            }
+
+            if (instance.Stems[instance.Stems.Count - 1] != null)
+            {
+                if (int.TryParse(instance.Stems[instance.Stems.Count - 1].name, out int refIndex))
+                {
+                    TrackedNode trackedNode = TrackedObject.trackedReferences[refIndex] as TrackedNode;
+                    if (trackedNode != null && trackedNode.data.controller == GameManager.ID)
                     {
                         if (ThreadManager.host)
                         {
-                            ServerSend.BrutBlockSystemStart(trackedBrutBlockSystem.data.trackedID, __instance.isNextBlock0);
+                            ServerSend.NodeFire(trackedNode.data.trackedID, velMult, firingDir);
                         }
-                        else if (trackedBrutBlockSystem.data.trackedID != -1)
+                        else if (trackedNode.data.trackedID != -1)
                         {
-                            ClientSend.BrutBlockSystemStart(trackedBrutBlockSystem.data.trackedID, __instance.isNextBlock0);
+                            ClientSend.NodeFire(trackedNode.data.trackedID, velMult, firingDir);
                         }
-
-                        return true;
                     }
+                }
+            }
+        }
+    }
 
-                    return false;
+    // Patches Construct_Haze
+    class HazePatch
+    {
+        // Patches Update 
+        static bool UpdatePrefix(Construct_Haze __instance)
+        {
+            if (Mod.managerObject == null)
+            {
+                return true;
+            }
+
+            if (__instance.PSystem2 != null)
+            {
+                if (int.TryParse(__instance.PSystem2.name, out int refIndex))
+                {
+                    TrackedHaze trackedHaze = TrackedObject.trackedReferences[refIndex] as TrackedHaze;
+                    if (trackedHaze != null)
+                    {
+                        if (trackedHaze.data.controller != GameManager.ID)
+                        {
+                            float num = Vector3.Distance(GM.CurrentPlayerBody.Head.position, __instance.transform.position);
+                            if (num < 1f && GM.TNH_Manager != null)
+                            {
+                                GM.TNH_Manager.TeleportToRandomHoldPoint();
+                            }
+                            if (__instance.KEBattery > 0f)
+                            {
+                                __instance.KEBattery -= Time.deltaTime * __instance.KEBatteryDecaySpeed;
+                                ParticleSystem.MainModule temp = __instance.PSystem.main;
+                                temp.startSize = 0.1f;
+                            }
+                            else
+                            {
+                                ParticleSystem.MainModule temp = __instance.PSystem.main;
+                                temp.startSize = 0.7f;
+                                if (!__instance.DamSphere.enabled)
+                                {
+                                    __instance.DamSphere.enabled = true;
+                                }
+                            }
+                            float t = Mathf.InverseLerp(__instance.PSystemEnergyRange.x, __instance.PSystemEnergyRange.y, __instance.KEBattery);
+                            float radius = Mathf.Lerp(__instance.PSystemEmitRange.x, __instance.PSystemEmitRange.y, t);
+                            __instance.sh.radius = radius;
+                            Vector3 vector = GM.CurrentPlayerBody.Head.position - __instance.transform.position;
+                            if (vector.magnitude > __instance.MaxSoundDist)
+                            {
+                                if (__instance.AudSource_Haze.isPlaying)
+                                {
+                                    __instance.AudSource_Haze.Stop();
+                                    __instance.curLPFreq = 100f;
+                                    __instance.tarLPFreq = 100f;
+                                }
+                            }
+                            else
+                            {
+                                if (Physics.Linecast(GM.CurrentPlayerBody.Head.position, __instance.transform.position, __instance.LM_Env, QueryTriggerInteraction.Ignore))
+                                {
+                                    __instance.AudSource_Haze.volume = __instance.BaseVolume * __instance.OcclusionVolumeCurve.Evaluate(vector.magnitude);
+                                    __instance.tarLPFreq = __instance.OcclusionFactorCurve.Evaluate(vector.magnitude);
+                                }
+                                else
+                                {
+                                    __instance.AudSource_Haze.volume = __instance.BaseVolume;
+                                    __instance.tarLPFreq = 22000f;
+                                }
+                                __instance.curLPFreq = Mathf.MoveTowards(__instance.curLPFreq, __instance.tarLPFreq, Time.deltaTime * 50000f);
+                                __instance.AudLowPass.cutoffFrequency = __instance.curLPFreq;
+                                if (!__instance.AudSource_Haze.isPlaying)
+                                {
+                                    __instance.AudSource_Haze.Play();
+                                }
+                            }
+
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        // Patches FixedUpdate 
+        static bool FixedUpdatePrefix(Construct_Haze __instance)
+        {
+            if (Mod.managerObject == null)
+            {
+                return true;
+            }
+
+            if (__instance.PSystem2 != null)
+            {
+                if (int.TryParse(__instance.PSystem2.name, out int refIndex))
+                {
+                    TrackedHaze trackedHaze = TrackedObject.trackedReferences[refIndex] as TrackedHaze;
+                    if (trackedHaze != null)
+                    {
+                        return trackedHaze.data.controller == GameManager.ID;
+                    }
                 }
             }
 

@@ -915,6 +915,15 @@ namespace H3MP.Patches
             {
                 Mod.LogError("Exception caught applying DamagePatches.BrutTurbineDamageablePatch: " + ex.Message + ":\n" + ex.StackTrace);
             }
+
+            ++patchIndex; // 60
+
+            // HazeDamagePatch
+            MethodInfo hazeDamageOriginal = typeof(Construct_Haze).GetMethod("Damage", BindingFlags.Public | BindingFlags.Instance);
+            MethodInfo hazeDamagePrefix = typeof(HazeDamagePatch).GetMethod("Prefix", BindingFlags.NonPublic | BindingFlags.Static);
+
+            PatchController.Verify(hazeDamageOriginal, harmony, false);
+            harmony.Patch(hazeDamageOriginal, new HarmonyMethod(hazeDamagePrefix));
         }
     }
 
@@ -3390,16 +3399,24 @@ namespace H3MP.Patches
             }
             else // Damageable object tracked, only want to apply damage if encryption controller
             {
-                TrackedEncryption trackedEncryption = TrackedEncryption.trackedEncryptionReferences[int.Parse(encryption.SpawnPoints[encryption.SpawnPoints.Count - 1].name)];
-                if (trackedEncryption == null)
+                if(encryption.SpawnPoints[encryption.SpawnPoints.Count - 1] != null)
                 {
-                    return false;
-                }
-                else
-                {
-                    return trackedEncryption.data.controller == GameManager.ID;
+                    if (int.TryParse(encryption.SpawnPoints[encryption.SpawnPoints.Count - 1].name, out int refIndex))
+                    {
+                        TrackedEncryption trackedEncryption = TrackedEncryption.trackedEncryptionReferences[refIndex];
+                        if (trackedEncryption == null)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            return trackedEncryption.data.controller == GameManager.ID;
+                        }
+                    }
                 }
             }
+
+            return true;
         }
 
         static IEnumerable<CodeInstruction> FixedUpdateTranspiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
@@ -3408,7 +3425,7 @@ namespace H3MP.Patches
 
             List<CodeInstruction> toInsert0 = new List<CodeInstruction>();
             toInsert0.Add(new CodeInstruction(OpCodes.Ldarg_0)); // Load encryption instance
-            toInsert0.Add(new CodeInstruction(OpCodes.Ldloc_S, 76)); // Load damageable
+            toInsert0.Add(new CodeInstruction(OpCodes.Ldloc_S, 66)); // Load damageable
             toInsert0.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(EncryptionDamageablePatch), "GetActualFlag"))); // Call our GetActualFlag
 
             bool applied = false;
@@ -3416,7 +3433,7 @@ namespace H3MP.Patches
             for (int i = 0; i < instructionList.Count; ++i)
             {
                 CodeInstruction instruction = instructionList[i];
-                if (instruction.opcode == OpCodes.Stloc_S && instruction.operand.ToString().Contains("77"))
+                if (instruction.opcode == OpCodes.Stloc_S && instruction.operand.ToString().Contains("67"))
                 {
                     if (found)
                     {
@@ -4338,6 +4355,51 @@ namespace H3MP.Patches
             }
 
             return instructionList;
+        }
+    }
+
+    // Patches Construct_Haze.Damage to control who causes damage
+    class HazeDamagePatch
+    {
+        public static int skip;
+
+        static bool Prefix(Construct_Haze __instance, Damage D)
+        {
+            if (skip > 0 || Mod.managerObject == null)
+            {
+                return true;
+            }
+
+            // If in control, apply damage, send to everyone else
+            // If not in control, apply damage without adding force to RB, then send to everyone, controller will apply force
+            if (__instance.PSystem2 != null)
+            {
+                if (int.TryParse(__instance.PSystem2.name, out int refIndex))
+                {
+                    TrackedHaze trackedHaze = TrackedObject.trackedReferences[refIndex] as TrackedHaze;
+                    if (trackedHaze != null)
+                    {
+                        if (trackedHaze.data.controller == GameManager.ID)
+                        {
+                            return true;
+                        }
+                        else // Not controller, send damage to controller for processing
+                        {
+                            if (ThreadManager.host)
+                            {
+                                ServerSend.HazeDamage(trackedHaze.data.trackedID, D, trackedHaze.data.controller);
+                            }
+                            else
+                            {
+                                ClientSend.HazeDamage(trackedHaze.data.trackedID, D);
+                            }
+
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
         }
     }
 }

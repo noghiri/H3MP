@@ -662,7 +662,11 @@ namespace H3MP.Networking
                 ClientHandle.IrisSetState,
                 ClientHandle.BrutBlockSystemStart,
                 ClientHandle.FloaterBeginDefusing,
-                ClientHandle.BatchedPackets
+                ClientHandle.BatchedPackets,
+                ClientHandle.NodeInit,
+                ClientHandle.NodeFire,
+                ClientHandle.HazeDamage,
+                ClientHandle.EncryptionFireGun,
             };
 
             // All vanilla scenes can be synced by default

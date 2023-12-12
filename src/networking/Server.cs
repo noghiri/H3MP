@@ -543,7 +543,11 @@ namespace H3MP.Networking
                 ServerHandle.IrisSetState,
                 ServerHandle.BrutBlockSystemStart,
                 ServerHandle.FloaterBeginDefusing,
-                ServerHandle.BatchedPackets
+                ServerHandle.BatchedPackets,
+                ServerHandle.NodeInit,
+                ServerHandle.NodeFire,
+                ServerHandle.HazeDamage,
+                ServerHandle.EncryptionFireGun,
             };
 
             objects = new TrackedObjectData[100];

@@ -2772,5 +2772,96 @@ namespace H3MP.Networking
                 SendTCPData(packet);
             }
         }
+
+        public static void NodeInit(int trackedID, List<Vector3> points, List<Vector3> ups)
+        {
+            using (Packet packet = new Packet((int)ClientPackets.nodeInit))
+            {
+                packet.Write(trackedID);
+                if(points == null || points.Count == 0)
+                {
+                    packet.Write((byte)0);
+                }
+                else
+                {
+                    packet.Write((byte)points.Count);
+                    for(int i=0; i < points.Count; ++i)
+                    {
+                        packet.Write(points[i]);
+                    }
+                }
+                if(ups == null || ups.Count == 0)
+                {
+                    packet.Write((byte)0);
+                }
+                else
+                {
+                    packet.Write((byte)ups.Count);
+                    for(int i=0; i < ups.Count; ++i)
+                    {
+                        packet.Write(ups[i]);
+                    }
+                }
+
+                SendTCPData(packet);
+            }
+        }
+
+        public static void NodeFire(int trackedID, float velMult, Vector3 firingDir)
+        {
+            using (Packet packet = new Packet((int)ClientPackets.nodeFire))
+            {
+                packet.Write(trackedID);
+                packet.Write(velMult);
+                packet.Write(firingDir);
+
+                SendTCPData(packet);
+            }
+        }
+
+        public static void HazeDamage(int trackedID, Damage D)
+        {
+            using (Packet packet = new Packet((int)ClientPackets.hazeDamage))
+            {
+                packet.Write(trackedID);
+                packet.Write(D);
+
+                SendTCPData(packet);
+            }
+        }
+
+        public static void EncryptionFireGun(int trackedID, float[] vels, Vector3[] dirs)
+        {
+            using (Packet packet = new Packet((int)ClientPackets.encryptionFireGun))
+            {
+                packet.Write(trackedID);
+                if(vels == null || vels.Length == 0)
+                {
+                    packet.Write((byte)0);
+                }
+                else
+                {
+                    packet.Write((byte)vels.Length);
+                    for(int i = 0; i < vels.Length; ++i)
+                    {
+                        packet.Write(vels[i]);
+                    }
+                }
+                if(dirs == null || dirs.Length == 0)
+                {
+                    packet.Write((byte)0);
+                }
+                else
+                {
+                    packet.Write((byte)dirs.Length);
+                    for(int i = 0; i < dirs.Length; ++i)
+                    {
+                        packet.Write(dirs[i]);
+                    }
+                }
+
+                SendTCPData(packet);
+            }
+        }
     }
 }

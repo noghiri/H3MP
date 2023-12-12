@@ -208,7 +208,11 @@ namespace H3MP.Networking
         irisSetState = 195,
         brutBlockSystemStart = 196,
         floaterBeginDefusing = 197,
-        batchedPacket = 198
+        batchedPacket = 198,
+        nodeInit = 199,
+        nodeFire = 200,
+        hazeDamage = 201,
+        encryptionFireGun = 202
     }
 
     /// <summary>Sent from client to server.</summary>
@@ -403,7 +407,11 @@ namespace H3MP.Networking
         irisSetState = 186,
         brutBlockSystemStart = 187,
         floaterBeginDefusing = 188,
-        batchedPacket = 189
+        batchedPacket = 189,
+        nodeInit = 190,
+        nodeFire = 191,
+        hazeDamage = 192,
+        encryptionFireGun = 193
     }
 
     public class Packet : IDisposable
@@ -906,6 +914,11 @@ namespace H3MP.Networking
         /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
         public byte[] ReadBytes(int _length, bool _moveReadPos = true)
         {
+            if(_length == 0)
+            {
+                return null;
+            }
+
             if (buffer.Count > readPos)
             {
                 // If there are unread bytes

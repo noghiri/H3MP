@@ -4869,5 +4869,104 @@ namespace H3MP.Networking
                 }
             }
         }
+
+        public static void NodeInit(Packet packet)
+        {
+            int trackedID = packet.ReadInt();
+
+            TrackedNodeData trackedNodeData = Client.objects[trackedID] as TrackedNodeData;
+            if (trackedNodeData != null)
+            {
+                trackedNodeData.points = new List<Vector3>();
+                int pointCount = packet.ReadByte();
+                for (int i = 0; i < pointCount; ++i)
+                {
+                    trackedNodeData.points.Add(packet.ReadVector3());
+                }
+                trackedNodeData.ups = new List<Vector3>();
+                int upsCount = packet.ReadByte();
+                for (int i = 0; i < upsCount; ++i)
+                {
+                    trackedNodeData.ups.Add(packet.ReadVector3());
+                }
+
+                if (trackedNodeData.physicalNode != null)
+                {
+                    trackedNodeData.physicalNode.physicalNode.initialPos = trackedNodeData.position;
+                    trackedNodeData.physicalNode.physicalNode.m_center = trackedNodeData.position;
+                    for (int j = 0; j < trackedNodeData.physicalNode.physicalNode.Cages.Count; j++)
+                    {
+                        trackedNodeData.physicalNode.physicalNode.Cages[j].SetParent(null);
+                    }
+                    trackedNodeData.physicalNode.physicalNode.UpdateCageStems();
+                }
+            }
+        }
+
+        public static void NodeFire(Packet packet)
+        {
+            int trackedID = packet.ReadInt();
+
+            TrackedNodeData trackedNodeData = Client.objects[trackedID] as TrackedNodeData;
+            if (trackedNodeData != null &&trackedNodeData.physicalNode != null)
+            {
+                float velMult = packet.ReadFloat();
+                Vector3 dir = packet.ReadVector3();
+                GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(trackedNodeData.physicalNode.physicalNode.ProjPrefab, trackedNodeData.physicalNode.physicalNode.transform.position, Quaternion.LookRotation(dir));
+                BallisticProjectile component = gameObject.GetComponent<BallisticProjectile>();
+                component.Fire(300f * velMult, dir, null, false);
+                component.SetSource_IFF(0);
+
+                trackedNodeData.physicalNode.physicalNode.UpdateCageStems();
+            }
+        }
+
+        public static void HazeDamage(Packet packet)
+        {
+            int trackedID = packet.ReadInt();
+
+            TrackedHazeData trackedHazeData = Client.objects[trackedID] as TrackedHazeData;
+            if (trackedHazeData != null && trackedHazeData.controller == GameManager.ID && trackedHazeData.physical != null)
+            {
+                ++HazeDamagePatch.skip;
+                trackedHazeData.physicalHaze.physicalHaze.Damage(packet.ReadDamage());
+                --HazeDamagePatch.skip;
+            }
+        }
+
+        public static void EncryptionFireGun(Packet packet)
+        {
+            int trackedID = packet.ReadInt();
+
+            TrackedEncryptionData trackedEncryptionData = Client.objects[trackedID] as TrackedEncryptionData;
+            if (trackedEncryptionData != null && trackedEncryptionData.physicalEncryption != null)
+            {
+                List<float> vels = new List<float>();
+                int velCount = packet.ReadByte();
+                for (int i = 0; i < velCount; ++i)
+                {
+                    vels.Add(packet.ReadFloat());
+                }
+                List<Vector3> dirs = new List<Vector3>();
+                int dirCount = packet.ReadByte();
+                for (int i = 0; i < dirCount; ++i)
+                {
+                    dirs.Add(packet.ReadVector3());
+                }
+
+                for (int i = 0; i < trackedEncryptionData.physicalEncryption.physicalEncryption.RefractiveMuzzles.Count; i++)
+                {
+                    Vector3 position = trackedEncryptionData.physicalEncryption.physicalEncryption.RefractiveMuzzles[i].position;
+                    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(trackedEncryptionData.physicalEncryption.physicalEncryption.RefractiveProjectile, position, trackedEncryptionData.physicalEncryption.physicalEncryption.RefractiveMuzzles[i].rotation);
+                    BallisticProjectile component = gameObject.GetComponent<BallisticProjectile>();
+                    component.FlightVelocityMultiplier = 0.04f;
+                    component.Fire(vels[i], dirs[i], null, true);
+                }
+                if (trackedEncryptionData.physicalEncryption.physicalEncryption.GunShotProfile != null)
+                {
+                    trackedEncryptionData.physicalEncryption.physicalEncryption.PlayShotEvent(trackedEncryptionData.physicalEncryption.physicalEncryption.RefractiveMuzzles[0].position);
+                }
+            }
+        }
     }
 }
