@@ -3653,6 +3653,16 @@ namespace H3MP.Patches
             }
 
             TrackedSosig trackedSosig = GameManager.trackedSosigBySosig.ContainsKey(__instance) ? GameManager.trackedSosigBySosig[__instance] : __instance.GetComponent<TrackedSosig>();
+#if DEBUG
+            if (trackedSosig != null && trackedSosig.data == null)
+            {
+                Mod.LogError("Dying sosig data is null!");
+            }
+            else
+            {
+                Mod.LogInfo("TrackedSosig data is not null, continuing.");
+            }
+#endif
             if (trackedSosig != null && trackedSosig.data.trackedID != -1)
             {
                 if (ThreadManager.host)

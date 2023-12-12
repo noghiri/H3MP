@@ -1727,6 +1727,8 @@ namespace H3MP.Networking
                 {
                     byte damClass = packet.ReadByte();
                     byte deathType = packet.ReadByte();
+                    Mod.LogInfo("Sosig dying! damClass is: " + damClass);
+                    Mod.LogInfo("Sosig dying! deathType is: " + deathType);
                     ++SosigPatch.sosigDiesSkip;
                     trackedSosig.physicalSosig.physicalSosig.SosigDies((Damage.DamageClass)damClass, (Sosig.SosigDeathType)deathType);
                     --SosigPatch.sosigDiesSkip;

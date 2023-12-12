@@ -95,8 +95,8 @@ namespace H3MP
         public static string sceneAtSceneLoadStart;
         public static bool connectedAtLoadStart;
         public static int colorIndex = 0;
-        public static readonly string[] colorNames = new string[] { "White", "Red", "Green", "Blue", "Black", "Desert", "Forest" };
-        public static readonly Color[] colors = new Color[] { Color.white, Color.red, Color.green, Color.blue, Color.black, new Color(0.98431f, 0.86275f, 0.71373f), new Color(0.31373f, 0.31373f, 0.15294f) };
+        public static readonly string[] colorNames = new string[] { "White", "Red", "Green", "Blue", "Black", "Desert", "Forest", "Purple" };
+        public static readonly Color[] colors = new Color[] { Color.white, Color.red, Color.green, Color.blue, Color.black, new Color(0.98431f, 0.86275f, 0.71373f), new Color(0.31373f, 0.31373f, 0.15294f), new Color(0.5f, 0f, 1f) };
         public static bool colorByIFF = false; 
         public static int nameplateMode = 1; // 0: All, 1: Friendly only (same IFF), 2: None 
         public static int radarMode = 0; // 0: All, 1: Friendly only (same IFF), 2: None 
